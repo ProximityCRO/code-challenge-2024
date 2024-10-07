@@ -42,11 +42,6 @@ services:
     depends_on:
       - backend
 
-  node_service:
-    image: node:20.18.0-alpine
-    command: tail -f /dev/null
-    volumes:
-     # - ./deleteme:/deleteme
 
 volumes:
   db_data:
