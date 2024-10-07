@@ -1,0 +1,52 @@
+services:
+
+  mysqldb:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: userA
+      MYSQL_PASSWORD: P@ssw0rd123
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysqldb
+
+
+  backend:
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "3001:3000"
+    depends_on:
+      - mysqldb
+      
+  frontend:
+    build:
+      context: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3002:3000"
+    depends_on:
+      - backend
+
+  node_service:
+    image: node:20.18.0-alpine
+    command: tail -f /dev/null
+    volumes:
+     # - ./deleteme:/deleteme
+
+volumes:
+  db_data:
