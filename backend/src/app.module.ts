@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BreedsModule } from './breeds/breeds.module';
-import { CatsModule } from './cats/cats.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import {RidesModule} from "./rides/rides.module";
 
 @Module({
   imports: [
@@ -17,7 +16,7 @@ import { AuthModule } from './auth/auth.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
-    //CatsModule,
+    RidesModule,
     //BreedsModule,
     UsersModule,
     AuthModule,
