@@ -23,7 +23,6 @@ export class RegisterDto {
 
   @Transform(({ value }) => value.trim())
   @IsString()
-  @MinLength(6)
   @IsEnum(Role, { message: 'Role must be one of the following: user, driver, admin' })
   role: Role;
 }
