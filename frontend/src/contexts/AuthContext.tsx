@@ -64,9 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         );
       }
     } else {
-      // User is not authenticated, redirect to login if not already there or on register page
+      // User is not authenticated, only redirect to login if trying to access protected routes
       const currentPath = window.location.pathname;
-      if (currentPath !== "/login" && currentPath !== "/register") {
+      const protectedRoutes = ["/user-dashboard", "/driver-dashboard"];
+      if (protectedRoutes.includes(currentPath)) {
         navigate("/login");
       }
     }
@@ -89,22 +90,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const role = decodedToken.role;
       localStorage.setItem("userRole", role);
 
-      // Use checkAuth to set the user state
-      const authenticatedUser = checkAuth();
-      if (authenticatedUser) {
-        // Navigate based on user role
-        if (role === "driver") {
-          navigate("/driver-dashboard");
-        } else {
-          navigate("/user-dashboard");
-        }
+      // Set the user state directly
+      setUser({
+        id,
+        name: "", // You might want to include the name in the login response
+        email: userEmail,
+        role: role as "user" | "driver",
+      });
+
+      // Navigate based on user role
+      if (role === "driver") {
+        navigate("/driver-dashboard");
+      } else {
+        navigate("/user-dashboard");
       }
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
     }
   };
-
   const register = async (
     name: string,
     email: string,

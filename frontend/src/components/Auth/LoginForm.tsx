@@ -28,8 +28,6 @@ const LoginForm: React.FC = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      // Redirect to dashboard based on user role
-      navigate("/user-dashboard");
     } catch (error) {
       setError("Invalid email or password. Please try again.");
     } finally {
