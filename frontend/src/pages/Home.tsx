@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const Home: React.FC = () => {
   return (
-    <Box maxWidth="600px" margin="auto" mt={8} p={4}>
+    <Box h="100vh" maxWidth="600px" margin="auto" mt={8} p={4}>
       <VStack spacing={4}>
         <Box w={300} mb={4}>
           <img
