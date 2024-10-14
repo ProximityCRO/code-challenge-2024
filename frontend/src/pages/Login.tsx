@@ -1,15 +1,17 @@
-import React from 'react';
-import { Box, Heading, Text, VStack } from '@chakra-ui/react';
-import LoginForm from '../components/Auth/LoginForm';
+import React from "react";
+import { Box, Heading, Text, VStack } from "@chakra-ui/react";
+import LoginForm from "../components/Auth/LoginForm";
 
 const Login: React.FC = () => {
   return (
     <Box maxWidth="600px" margin="auto" mt={8} p={4}>
-      <VStack spacing={4} align="stretch">
-        <Heading as="h1" size="xl" textAlign="center">
-          Welcome to GetARide
+      <VStack spacing={4} align="center">
+        <Heading as="h1" color="#1F41BB" fontWeight="bold">
+          Login Here
         </Heading>
-        <Text textAlign="center">Please log in to continue</Text>
+        <Text color="black" fontWeight={500}>
+          Welcome back you've been missed!
+        </Text>
         <LoginForm />
       </VStack>
     </Box>
