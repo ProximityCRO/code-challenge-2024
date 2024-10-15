@@ -57,6 +57,7 @@ const RegisterForm: React.FC = () => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              padding={5}
               borderRadius="10px"
               background="#F1F4FF"
               placeholder="Name"
@@ -70,6 +71,7 @@ const RegisterForm: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              padding={5}
               borderRadius="10px"
               background="#F1F4FF"
               placeholder="Email"
@@ -83,6 +85,7 @@ const RegisterForm: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              padding={5}
               borderRadius="10px"
               background="#F1F4FF"
               placeholder="Password"
@@ -96,6 +99,7 @@ const RegisterForm: React.FC = () => {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
+              padding={5}
               borderRadius="10px"
               background="#F1F4FF"
               placeholder="Phone Number"

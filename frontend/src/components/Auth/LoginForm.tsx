@@ -51,6 +51,7 @@ const LoginForm: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                padding={5}
                 borderRadius="10px"
                 background="#F1F4FF"
                 placeholder="Email"
@@ -64,6 +65,7 @@ const LoginForm: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                padding={5}
                 borderRadius="10px"
                 background="#F1F4FF"
                 placeholder="Password"
@@ -78,7 +80,7 @@ const LoginForm: React.FC = () => {
               isLoading={isLoading}
               borderRadius="10px"
               background="#1F41BB"
-              boxShadow="0px 10px 20px 0px #CBD6FF"
+              boxShadow="0px 8px 8px 0px #CBD6FF"
               color="white"
               _hover={{ background: "#1A38A3" }}
             >

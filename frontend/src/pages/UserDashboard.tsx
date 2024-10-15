@@ -10,7 +10,7 @@ const UserDashboard: React.FC = () => {
   };
 
   return (
-    <Box maxWidth="600px" margin="auto" mt={8} p={4}>
+    <Box h="100vh" maxWidth="600px" margin="auto" mt={8} p={4}>
       <Heading as="h1" size="xl">User Dashboard</Heading>
       <Text mt={4}>Welcome to Get A Ride!</Text>
       <Button mt={4} onClick={handleLogout} colorScheme="red">

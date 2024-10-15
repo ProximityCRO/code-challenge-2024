@@ -42,6 +42,7 @@ const Home: React.FC = () => {
             minW={120}
             minH={'30px'}
             fontWeight="bold"
+            _hover={{ background: "#F1F4FF" }}
           >
             Register
           </Button>
