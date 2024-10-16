@@ -1,5 +1,6 @@
 import { Expose, Type } from "class-transformer";
 import { OfferResponseDto } from "../../offers/dto/offer.dto";
+import { UserResponseDTO } from "../../users/dto/user.dto";
 
 export class RideResponseDto {
   @Expose()
@@ -7,6 +8,10 @@ export class RideResponseDto {
 
   @Expose()
   user_id: number;
+
+  @Expose()
+  @Type(() => UserResponseDTO)
+  user: UserResponseDTO | null;
 
   @Expose()
   @Type(() => OfferResponseDto)
