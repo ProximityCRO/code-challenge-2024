@@ -8,9 +8,9 @@ import { Ride } from "./entities/ride.entity";
 import { Status } from "../common/enums/status.enum";
 import { User } from "../users/entities/user.entity";
 import { plainToInstance } from "class-transformer";
-import { OfferResponseExpandDto } from "../offers/dto/offer.dto";
 import { RideResponseDto } from "./dto/ride.dto";
 import { Offer } from "../offers/entities/offer.entity";
+import { Review } from "../reviews/entities/review.entity";
 
 @Injectable()
 export class RidesService {
@@ -21,6 +21,8 @@ export class RidesService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Offer)
     private readonly offerRepository: Repository<Offer>,
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
   ) {}
 
   async create(createRideDto: CreateRideDto, user: UserActiveInterface) {
@@ -70,6 +72,9 @@ export class RidesService {
         const user_ride = await this.userRepository.findOneBy({
           id: ride.user_id,
         });
+        const review = await this.reviewRepository.findOneBy({
+          id: ride.review_id,
+        });
         return plainToInstance(RideResponseDto, {
           id: ride.id,
           user_id: ride.user_id,
@@ -89,7 +94,14 @@ export class RidesService {
           pickup_location: ride.pickup_location,
           destination_location: ride.destination_location,
           scheduled_time: ride.scheduled_time,
-          review: ride.review_id,
+          review: review
+            ? {
+                id: review.id,
+                driver_id: review.driver_id,
+                rating: review.rating,
+                comments: review.comments,
+              }
+            : null,
         });
       }),
     );

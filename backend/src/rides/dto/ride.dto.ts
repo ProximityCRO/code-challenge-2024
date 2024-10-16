@@ -1,6 +1,7 @@
 import { Expose, Type } from "class-transformer";
 import { OfferResponseDto } from "../../offers/dto/offer.dto";
 import { UserResponseDTO } from "../../users/dto/user.dto";
+import { ReviewResponseDto } from "../../reviews/dto/review.dto";
 
 export class RideResponseDto {
   @Expose()
@@ -33,5 +34,6 @@ export class RideResponseDto {
   scheduled_time: Date;
 
   @Expose()
-  review: number | null;
+  @Type(() => ReviewResponseDto)
+  review: ReviewResponseDto | null;
 }
