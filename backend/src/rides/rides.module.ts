@@ -5,9 +5,10 @@ import { RidesService } from "./rides.service";
 import { Ride } from "./entities/ride.entity";
 import { User } from "../users/entities/user.entity";
 import { Offer } from "../offers/entities/offer.entity";
+import { Review } from "../reviews/entities/review.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Ride, User, Offer])],
+  imports: [TypeOrmModule.forFeature([Ride, User, Offer, Review])],
   controllers: [RidesController],
   providers: [RidesService],
 })
