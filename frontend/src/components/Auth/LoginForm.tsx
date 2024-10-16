@@ -27,7 +27,12 @@ const LoginForm: React.FC = () => {
     setError("");
     setIsLoading(true);
     try {
-      await login(email, password);
+      const role = await login(email, password);
+      if (role === "driver") {
+        navigate("/driver-dashboard");
+      } else {
+        navigate("/user-dashboard");
+      }
     } catch (error) {
       setError("Invalid email or password. Please try again.");
     } finally {

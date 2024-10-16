@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 
 interface User {
   id: number;
@@ -28,7 +27,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const navigate = useNavigate();
 
   const checkAuth = () => {
     const token = localStorage.getItem("token");
@@ -52,26 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    const authenticatedUser = checkAuth();
-    if (authenticatedUser) {
-      // User is authenticated, redirect to appropriate dashboard if not already there
-      const currentPath = window.location.pathname;
-      if (currentPath === "/login" || currentPath === "/register") {
-        navigate(
-          authenticatedUser.role === "driver"
-            ? "/driver-dashboard"
-            : "/user-dashboard"
-        );
-      }
-    } else {
-      // User is not authenticated, only redirect to login if trying to access protected routes
-      const currentPath = window.location.pathname;
-      const protectedRoutes = ["/user-dashboard", "/driver-dashboard"];
-      if (protectedRoutes.includes(currentPath)) {
-        navigate("/login");
-      }
-    }
-  }, [navigate]);
+    checkAuth();
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
@@ -98,17 +78,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         role: role as "user" | "driver",
       });
 
-      // Navigate based on user role
-      if (role === "driver") {
-        navigate("/driver-dashboard");
-      } else {
-        navigate("/user-dashboard");
-      }
+      return role;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
     }
   };
+
   const register = async (
     name: string,
     email: string,
@@ -130,7 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       const { name: userName, email: userEmail } = response.data;
       setUser({ id: 0, name: userName, email: userEmail, role });
-      navigate("/login");
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         console.error("Registration failed:", error.response.data);
@@ -153,7 +128,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem("userRole");
     localStorage.removeItem("userEmail");
     setUser(null);
-    navigate("/login");
   };
 
   return (

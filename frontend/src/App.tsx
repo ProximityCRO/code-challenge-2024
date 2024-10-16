@@ -1,21 +1,61 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
-import { ChakraProvider, Image } from "@chakra-ui/react";
-import { AuthProvider } from "./contexts/AuthContext";
+import { ChakraProvider } from "@chakra-ui/react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import axios from "axios";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
-// import RideRequest from './pages/RideRequest';
-import { useAuth } from "./contexts/AuthContext";
-
+import VehicleRegistrationForm from "./components/Driver/VehicleRegistrationForm";
 import "./App.css";
+
+const App: React.FC = () => {
+  return (
+    <ChakraProvider>
+      <Router>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/user-dashboard"
+              element={
+                <ProtectedRoute element={<UserDashboard />} role="user" />
+              }
+            />
+            <Route
+              path="/driver-dashboard"
+              element={
+                <ProtectedRoute
+                  element={<DriverRoute element={<DriverDashboard />} />}
+                  role="driver"
+                />
+              }
+            />
+            <Route
+              path="/vehicle-registration"
+              element={
+                <ProtectedRoute
+                  element={<VehicleRegistrationForm />}
+                  role="driver"
+                />
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </ChakraProvider>
+  );
+};
 
 const ProtectedRoute: React.FC<{
   element: React.ReactElement;
@@ -27,46 +67,47 @@ const ProtectedRoute: React.FC<{
   return element;
 };
 
-const AppRoutes: React.FC = () => {
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route
-        path="/user-dashboard"
-        element={<ProtectedRoute element={<UserDashboard />} role="user" />}
-      />
-      <Route
-        path="/driver-dashboard"
-        element={<ProtectedRoute element={<DriverDashboard />} role="driver" />}
-      />
-      {/* <Route path="/ride-request" element={<ProtectedRoute element={<RideRequest />} role="user" />} /> */}
-    </Routes>
-  );
-};
+const DriverRoute: React.FC<{ element: React.ReactElement }> = ({
+  element,
+}) => {
+  const { user } = useAuth();
+  const [hasVehicle, setHasVehicle] = useState<boolean | null>(null);
+  const navigate = useNavigate();
 
-const App: React.FC = () => {
-  return (
-    <ChakraProvider>
-      <Image
-        src="/top-bg.svg"
-        alt="Fondo SVG"
-        position="absolute"
-        top="0"
-        right="0"
-        zIndex="-1"
-        width={{ base: "35vh", md: "20vw" }}
-        transform="scale(2)"
-        height="auto"
-      />
-      <Router>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </Router>
-    </ChakraProvider>
-  );
+  useEffect(() => {
+    const checkVehicle = async () => {
+      if (!user) return;
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/api/v1/auth/profile/`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (response.data.vehicle) {
+          setHasVehicle(true);
+        } else {
+          setHasVehicle(false);
+          navigate("/vehicle-registration");
+        }
+      } catch (error) {
+        console.error("Error checking vehicle:", error);
+        setHasVehicle(false);
+        navigate("/vehicle-registration");
+      }
+    };
+
+    if (user && user.role === "driver") {
+      checkVehicle();
+    }
+  }, [user, navigate]);
+
+  if (hasVehicle === null) return null; // Loading state
+  if (hasVehicle === false)
+    return <Navigate to="/vehicle-registration" replace />;
+  return element;
 };
 
 export default App;
