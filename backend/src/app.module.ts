@@ -6,6 +6,7 @@ import { RidesModule } from "./rides/rides.module";
 import { OffersModule } from "./offers/offers.module";
 import { ReviewsModule } from "./reviews/reviews.module";
 import { VehiclesModule } from "./vehicles/vehicles.module";
+import { MailService } from "./common/mails/mail.service";
 
 @Module({
   imports: [
