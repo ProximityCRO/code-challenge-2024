@@ -9,7 +9,11 @@ import { Ride } from "../rides/entities/ride.entity";
 import { SelectOfferDto } from "./dto/select-offer.dto";
 import { RideResponseDto } from "../rides/dto/ride.dto";
 import { plainToInstance } from "class-transformer";
-import { generatePin } from "../common/utils/general.util";
+import {
+  createHtmlContent,
+  createTextContent,
+  generatePin,
+} from "../common/utils/general.util";
 import { Status } from "../common/enums/status.enum";
 import { OfferResponseExpandDto } from "./dto/offer.dto";
 import { Vehicle } from "../vehicles/entities/vehicle.entity";
@@ -118,32 +122,16 @@ export class OffersService {
 
     if (driverToNotify && userToNotify) {
       const emailSubject = "Ride Confirmation";
-      const emailTextContent = `Your ride has been confirmed. Details:
-      Ride ID: ${rideResponse.id} - 
-      Pickup Location: ${rideResponse.pickup_location} - 
-      Destination Location: ${rideResponse.destination_location} - 
-      Scheduled Time: ${rideResponse.scheduled_time} - 
-      Status: ${rideResponse.status} -
-      Driver: ${driverToNotify.name} -
-      User: ${userToNotify.name} -
-      Price: ${rideResponse.offer.price} -
-      PIN: ${rideResponse.pin}`;
-
-      const emailHtmlContent = `
-        <h3>Ride Information</h3>
-        <ul>
-          <li><strong>Ride ID:</strong> ${rideResponse.id}</li>
-          <li><strong>Pickup Location:</strong> ${rideResponse.pickup_location}</li>
-          <li><strong>Destination Location:</strong> ${rideResponse.destination_location}</li>
-          <li><strong>Scheduled Time:</strong> ${rideResponse.scheduled_time}</li>
-          <li><strong>Status:</strong> ${rideResponse.status}</li>
-          <li><strong>Driver:</strong> ${driverToNotify.name}</li>
-          <li><strong>User:</strong> ${userToNotify.name}</li>
-          <li><strong>Price:</strong> $${rideResponse.offer.price}</li>
-          <li><strong>PIN:</strong> ${rideResponse.pin}</li>
-        </ul>
-      `;
-
+      const emailTextContent = createTextContent(
+        rideResponse,
+        driverToNotify,
+        userToNotify,
+      );
+      const emailHtmlContent = createHtmlContent(
+        rideResponse,
+        driverToNotify,
+        userToNotify,
+      );
       await this.mailService.sendMail(
         [userToNotify.email, driverToNotify.email],
         emailSubject,
