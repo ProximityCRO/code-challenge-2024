@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   VStack,
@@ -6,10 +6,9 @@ import {
   Text,
   Button,
 } from '@chakra-ui/react';
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-
+import { useParams, useLocation } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 interface Ride {
   id: number;
   status: 'REQUESTED' | 'ACCEPTED' | 'COMPLETED';
@@ -27,29 +26,29 @@ interface Ride {
 const RideDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const rideId = Number(id);
+  const location = useLocation();
 
-  const { data: ride, isLoading, isError } = useQuery<Ride>({
-    queryKey: ['ride', rideId],
-    queryFn: async () => {
-      const response = await axios.get(`http://localhost:3001/api/v1/ride/${rideId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      return response.data;
-    },
-  });
+  const navigate = useNavigate();
+  
+  const queryClient = useQueryClient();
+  let ride = location.state?.ride as Ride | undefined;
+
+  if (!ride) {
+    const rides = queryClient.getQueryData<Ride[]>(['userRides']);
+    ride = rides?.find((ride) => ride.id === rideId);
+  }
+  
+  if (!ride) {
+    useEffect(() => {
+      navigate('/user-dashboard');
+    }, [navigate]);
+    return <Text>Ride not found</Text>;
+  }
 
   const handleReview = (rideId: number) => {
     console.log(`Review ride ${rideId}`);
     // Implement logic to leave a review
   };
-
-  if (isLoading) {
-    return <Text>Loading ride details...</Text>;
-  }
-
-  if (isError || !ride) {
-    return <Text>Error loading ride details</Text>;
-  }
 
   return (
     <Box maxWidth="600px" margin="auto" mt={8} p={4}>
@@ -61,13 +60,13 @@ const RideDetails: React.FC = () => {
         <Text><strong>To:</strong> {ride.destination_location}</Text>
         <Text><strong>Date:</strong> {new Date(ride.scheduled_time).toLocaleString()}</Text>
         <Text><strong>Status:</strong> {ride.status}</Text>
-        {ride.status === 'ACCEPTED' && (
+        {ride.status.toUpperCase() === 'ACCEPTED' && (
           <>
             <Text fontWeight="bold" fontSize="2xl">PIN: {ride.pin}</Text>
             <Text>Waiting for driver to validate PIN...</Text>
           </>
         )}
-        {ride.status === 'COMPLETED' && (
+        {ride.status.toUpperCase() === 'COMPLETED' && (
           <>
             <Text>The ride has been completed.</Text>
             <Button colorScheme="purple" onClick={() => handleReview(ride.id)}>

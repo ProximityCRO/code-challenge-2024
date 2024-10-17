@@ -64,8 +64,8 @@ const UserDashboard: React.FC = () => {
 
   const navigate = useNavigate();
 
-  const handleViewRide = (rideId: number) => {
-    navigate(`/ride/${rideId}`);
+  const handleViewRide = (ride: Ride) => {
+    navigate(`/ride/${ride.id}`, { state: ride });
   };
 
   const {
@@ -127,7 +127,7 @@ const UserDashboard: React.FC = () => {
         );
       case "ACCEPTED":
         return (
-          <Button colorScheme="green" onClick={() => handleViewRide(ride.id)}>
+          <Button colorScheme="green" onClick={() => handleViewRide(ride)}>
             PIN
           </Button>
         );
