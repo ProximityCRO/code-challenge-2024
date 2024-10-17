@@ -106,6 +106,8 @@ export class OffersService {
       review: ride.review_id,
     };
 
+    //notify email
+
     return plainToInstance(RideResponseDto, rideResponse);
   }
 }
