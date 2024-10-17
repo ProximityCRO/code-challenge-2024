@@ -36,7 +36,6 @@ export class AuthController {
   }
 
   @Get("profile")
-  @Auth([Role.USER, Role.DRIVER])
   profile(@ActiveUser() user: UserActiveInterface) {
     return this.authService.profile(user);
   }
