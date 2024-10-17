@@ -7,6 +7,7 @@ import { Review } from "../reviews/entities/review.entity";
 import { Role } from "../common/enums/rol.enum";
 import { plainToInstance } from "class-transformer";
 import { UserProfileDto } from "./dto/user-profile.dto";
+import { Vehicle } from "../vehicles/entities/vehicle.entity";
 
 @Injectable()
 export class UsersService {
@@ -15,6 +16,8 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Review)
     private readonly reviewRepository: Repository<Review>,
+    @InjectRepository(Vehicle)
+    private readonly vehicleRepository: Repository<Vehicle>,
   ) {}
 
   create(createUserDto: CreateUserDto) {
@@ -24,8 +27,12 @@ export class UsersService {
   async profile(email: string) {
     let user = await this.userRepository.findOneBy({ email });
     let reviews = [];
+    let vehicle = null;
     if (user.role === Role.DRIVER) {
       reviews = await this.reviewRepository.find({ where: { driver: user } });
+      vehicle = await this.vehicleRepository.findOne({
+        where: { driver: user },
+      });
     } else if (user.role === Role.USER) {
       reviews = await this.reviewRepository.find({ where: { user: user } });
     }
@@ -44,7 +51,7 @@ export class UsersService {
       name: user.name,
       phone_number: user.phone_number,
       role: user.role,
-      vehicle: null,
+      vehicle: vehicle,
       rating_average: ratingAverage,
       reviews: reviews,
     });
