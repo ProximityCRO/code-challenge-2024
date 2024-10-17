@@ -9,6 +9,7 @@ import {
   VStack,
   Heading,
   useToast,
+  Text,
 } from '@chakra-ui/react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,7 +29,9 @@ const VehicleRegistrationForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/v1/vechicle', {
+      console.log(`${user?.id} ${brand} ${model} ${year} ${color}`);
+      
+      const response = await axios.post('http://localhost:3001/api/v1/vehicle', {
         driver_id: user?.id,
         brand,
         model,
@@ -42,19 +45,27 @@ const VehicleRegistrationForm: React.FC = () => {
 
       toast({
         title: 'Vehicle registered successfully',
+        description: `Your ${color} ${brand} ${model} has been registered.`,
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
 
+      // Store vehicle information in local storage
+      localStorage.setItem('userVehicle', JSON.stringify(response.data));
+
       navigate('/driver-dashboard');
     } catch (error) {
       console.error('Vehicle registration failed:', error);
+      let errorMessage = 'Please try again';
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+      }
       toast({
         title: 'Vehicle registration failed',
-        description: 'Please try again',
+        description: errorMessage,
         status: 'error',
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
     } finally {
@@ -115,6 +126,9 @@ const VehicleRegistrationForm: React.FC = () => {
           </Button>
         </VStack>
       </form>
+      <Text mt={4} fontSize="sm" color="gray.600">
+        Note: You can edit your vehicle information later in your profile settings.
+      </Text>
     </Box>
   );
 };
