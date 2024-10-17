@@ -59,7 +59,7 @@ const UserDashboard: React.FC = () => {
     }
   });
 
-  const cancelRideMutation = useMutation({
+  const deleteRideMutation = useMutation({
     mutationFn: async (rideId: number) => {
       await axios.delete(`http://localhost:3001/api/v1/ride/${rideId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -68,7 +68,7 @@ const UserDashboard: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['userRides']);
       toast({
-        title: "Ride cancelled successfully",
+        title: "Ride deleted successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
@@ -76,7 +76,7 @@ const UserDashboard: React.FC = () => {
     },
     onError: () => {
       toast({
-        title: "Error cancelling ride",
+        title: "Error deleting ride",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -92,9 +92,14 @@ const UserDashboard: React.FC = () => {
     switch (ride.status.toUpperCase()) {
       case 'REQUESTED':
         return (
-          <Button colorScheme="blue" onClick={() => handleOffers(ride.id)}>
-            Offers
-          </Button>
+          <VStack>
+            <Button colorScheme="blue" onClick={() => handleOffers(ride.id)}>
+              Offers
+            </Button>
+            <Button colorScheme="red" onClick={() => handleDeleteRide(ride.id)}>
+              Delete
+            </Button>
+          </VStack>
         );
       case 'ACCEPTED':
         return (
@@ -121,11 +126,10 @@ const UserDashboard: React.FC = () => {
   const handleReview = (rideId: number) => {
     console.log(`Review ride ${rideId}`);
     // Implement logic to leave a review
-    // You might want to open a modal or navigate to a review page
   };
 
-  const handleCancelRide = (rideId: number) => {
-    cancelRideMutation.mutate(rideId);
+  const handleDeleteRide = (rideId: number) => {
+    deleteRideMutation.mutate(rideId);
   };
 
   return (
@@ -160,7 +164,6 @@ const UserDashboard: React.FC = () => {
           isOpen={isOffersOpen} 
           onClose={onOffersClose} 
           rideId={selectedRideId}
-          onCancelRide={handleCancelRide}
         />
       )}
 
@@ -182,14 +185,9 @@ const UserDashboard: React.FC = () => {
                   <Text fontSize="sm" color="gray.500">Status: {ride.status}</Text>
                   {ride.offer && <Text fontSize="sm">Price: ${ride.offer.price.toFixed(2)}</Text>}
                 </VStack>
-                <VStack>
+                <Box>
                   {renderRideButton(ride)}
-                  {ride.status === 'REQUESTED' && (
-                    <Button colorScheme="red" size="sm" onClick={() => handleCancelRide(ride.id)}>
-                      Cancel
-                    </Button>
-                  )}
-                </VStack>
+                </Box>
               </Flex>
             </Box>
           ))}

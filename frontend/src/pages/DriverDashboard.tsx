@@ -25,8 +25,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
 interface Ride {
-  status: string;
   id: number;
+  status: string;
   pickup_location: string;
   destination_location: string;
   user: {
@@ -41,21 +41,21 @@ const DriverDashboard: React.FC = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { isOpen: isPinModalOpen, onOpen: onPinModalOpen, onClose: onPinModalClose } = useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [offerPrices, setOfferPrices] = useState<{ [key: number]: string }>({});
   const [selectedRideId, setSelectedRideId] = useState<number | null>(null);
   const [pin, setPin] = useState<string>("");
 
   const { data: rides, isLoading, isError } = useQuery<Ride[]>({
-    queryKey: ['availableRides'],
+    queryKey: ['driverRides'],
     queryFn: async () => {
       const response = await axios.get('http://localhost:3001/api/v1/ride', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      return response.data.filter((ride: Ride) => ride.status === 'requested' || ride.status === 'accepted');
+      return response.data;
     },
-    refetchInterval: 5000, // Poll every 5 seconds
+    refetchInterval: 5000,
   });
 
   const createOfferMutation = useMutation({
@@ -64,7 +64,7 @@ const DriverDashboard: React.FC = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['availableRides']);
+      queryClient.invalidateQueries(['driverRides']);
       toast({
         title: 'Offer sent successfully',
         status: 'success',
@@ -72,7 +72,7 @@ const DriverDashboard: React.FC = () => {
         isClosable: true,
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: 'Failed to send offer',
         description: 'Please try again',
@@ -84,25 +84,35 @@ const DriverDashboard: React.FC = () => {
   });
 
   const validatePinMutation = useMutation({
-    mutationFn: async ({ rideId, pin }: { rideId: number; pin: string }) => {
-      await axios.put(`http://localhost:3001/api/v1/ride/${rideId}/validate-pin`, { pin }, {
+    mutationFn: async (data: { ride_id: number; pin: string }) => {
+      const response = await axios.post('http://localhost:3001/api/v1/ride/validation', data, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['availableRides']);
-      toast({
-        title: "PIN validated successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-      onPinModalClose();
+    onSuccess: (data) => {
+      if (data.validation) {
+        toast({
+          title: 'PIN validated successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        onClose();
+        // Here you might want to update the ride status or perform other actions
+      } else {
+        toast({
+          title: 'Invalid PIN',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     },
     onError: () => {
       toast({
-        title: "Invalid PIN",
-        status: "error",
+        title: 'Error validating PIN',
+        status: 'error',
         duration: 3000,
         isClosable: true,
       });
@@ -127,13 +137,13 @@ const DriverDashboard: React.FC = () => {
 
   const handlePinValidation = (rideId: number) => {
     setSelectedRideId(rideId);
-    setPin(""); // Reset PIN input
-    onPinModalOpen();
+    setPin("");
+    onOpen();
   };
 
   const handlePinSubmit = () => {
     if (selectedRideId) {
-      validatePinMutation.mutate({ rideId: selectedRideId, pin });
+      validatePinMutation.mutate({ ride_id: selectedRideId, pin });
     }
   };
 
@@ -152,7 +162,7 @@ const DriverDashboard: React.FC = () => {
         </HStack>
       </Flex>
 
-      <Heading as="h2" size="lg" mb={4}>Rides to make offer</Heading>
+      <Heading as="h2" size="lg" mb={4}>Available Rides</Heading>
 
       {isLoading ? (
         <Text>Loading rides...</Text>
@@ -168,7 +178,7 @@ const DriverDashboard: React.FC = () => {
                 <Text>User: {ride.user.name}</Text>
                 <Text>Date: {new Date(ride.scheduled_time).toLocaleString()}</Text>
                 <Text>Status: {ride.status}</Text>
-                {ride.status === 'requested' ? (
+                {ride.status.toUpperCase() === 'REQUESTED' ? (
                   <HStack mt={2}>
                     <Input
                       placeholder="Price"
@@ -178,7 +188,7 @@ const DriverDashboard: React.FC = () => {
                     />
                     <Button colorScheme="blue" onClick={() => handleSendOffer(ride.id)}>Send Offer</Button>
                   </HStack>
-                ) : ride.status === 'accepted' ? (
+                ) : ride.status.toUpperCase() === 'ACCEPTED' ? (
                   <Button colorScheme="green" onClick={() => handlePinValidation(ride.id)}>Validate PIN</Button>
                 ) : null}
               </VStack>
@@ -187,7 +197,7 @@ const DriverDashboard: React.FC = () => {
         </VStack>
       )}
 
-      <Modal isOpen={isPinModalOpen} onClose={onPinModalClose}>
+      <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Enter PIN</ModalHeader>
@@ -203,7 +213,7 @@ const DriverDashboard: React.FC = () => {
             <Button colorScheme="blue" mr={3} onClick={handlePinSubmit}>
               Submit
             </Button>
-            <Button variant="ghost" onClick={onPinModalClose}>Cancel</Button>
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
