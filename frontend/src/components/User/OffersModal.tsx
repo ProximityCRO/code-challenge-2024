@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -13,16 +13,18 @@ import {
   Box,
   Select,
   Link,
-} from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+} from "@chakra-ui/react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 interface Offer {
   id: number;
-  driver_name: string;
+  driver: {
+    name: string;
+    rating: number;
+    vehicle: string;
+  };
   price: number;
-  rating: number;
-  vehicle: string;
 }
 
 interface OffersModalProps {
@@ -31,22 +33,34 @@ interface OffersModalProps {
   rideId: number;
 }
 
-const OffersModal: React.FC<OffersModalProps> = ({ isOpen, onClose, rideId }) => {
-  const [sortBy, setSortBy] = useState<'price' | 'rating'>('price');
+const OffersModal: React.FC<OffersModalProps> = ({
+  isOpen,
+  onClose,
+  rideId,
+}) => {
+  const [sortBy, setSortBy] = useState<"price" | "rating">("price");
 
-  const { data: offers, isLoading, isError } = useQuery<Offer[]>({
-    queryKey: ['offers', rideId],
+  const {
+    data: offers,
+    isLoading,
+    isError,
+  } = useQuery<Offer[]>({
+    queryKey: ["offers", rideId],
     queryFn: async () => {
-      const response = await axios.get(`http://localhost:3001/api/v1/offer/?ride_id=${rideId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await axios.get(
+        `http://localhost:3001/api/v1/offer/?ride_id=${rideId}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      console.log(response.data);
       return response.data;
     },
     refetchInterval: 5000, // Polling every 5 seconds
   });
 
-  const sortedOffers = offers?.sort((a, b) => 
-    sortBy === 'price' ? a.price - b.price : b.rating - a.rating
+  const sortedOffers = offers?.sort((a, b) =>
+    sortBy === "price" ? a.price - b.price : b.rating - a.rating
   );
 
   const handleAccept = (offerId: number) => {
@@ -65,7 +79,11 @@ const OffersModal: React.FC<OffersModalProps> = ({ isOpen, onClose, rideId }) =>
       <ModalContent>
         <ModalHeader>Offers</ModalHeader>
         <ModalBody>
-          <Select mb={4} value={sortBy} onChange={(e) => setSortBy(e.target.value as 'price' | 'rating')}>
+          <Select
+            mb={4}
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "price" | "rating")}
+          >
             <option value="price">Sort by Price</option>
             <option value="rating">Sort by Rating</option>
           </Select>
@@ -77,13 +95,26 @@ const OffersModal: React.FC<OffersModalProps> = ({ isOpen, onClose, rideId }) =>
             <VStack spacing={4} align="stretch">
               {sortedOffers.map((offer) => (
                 <Box key={offer.id} p={4} borderWidth={1} borderRadius="md">
-                  <Text>Driver: {offer.driver_name}</Text>
+                  <Text>Driver: {offer.driver.name}</Text>
                   <Text>Price: ${offer.price.toFixed(2)}</Text>
-                  <Text>Ranking: {offer.rating} (<Link href="#">Go to Reviews</Link>)</Text>
-                  <Text>Vehicle: {offer.vehicle}</Text>
+                  <Text>
+                    Rating: {offer.driver.rating} (
+                    <Link href="#">Go to Reviews</Link>)
+                  </Text>
+                  <Text>Vehicle: {offer.driver.vehicle}</Text>
                   <HStack mt={2} spacing={2}>
-                    <Button colorScheme="green" onClick={() => handleAccept(offer.id)}>Accept</Button>
-                    <Button colorScheme="red" onClick={() => handleDecline(offer.id)}>Decline</Button>
+                    <Button
+                      colorScheme="green"
+                      onClick={() => handleAccept(offer.id)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      colorScheme="red"
+                      onClick={() => handleDecline(offer.id)}
+                    >
+                      Decline
+                    </Button>
                   </HStack>
                 </Box>
               ))}
@@ -93,7 +124,9 @@ const OffersModal: React.FC<OffersModalProps> = ({ isOpen, onClose, rideId }) =>
           )}
         </ModalBody>
         <ModalFooter>
-          <Button colorScheme="blue" onClick={onClose}>Close</Button>
+          <Button colorScheme="blue" onClick={onClose}>
+            Close
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
