@@ -13,8 +13,10 @@ import {
   Box,
   Select,
   Link,
+  useToast,
+  Input,
 } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
 interface Offer {
@@ -47,6 +49,9 @@ const OffersModal: React.FC<OffersModalProps> = ({
   rideId,
 }) => {
   const [sortBy, setSortBy] = useState<"price" | "rating">("price");
+  const [pin, setPin] = useState<string>("");
+  const toast = useToast();
+  const queryClient = useQueryClient();
 
   const {
     data: offers,
@@ -61,31 +66,95 @@ const OffersModal: React.FC<OffersModalProps> = ({
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-      console.log(response.data);
       return response.data;
     },
-    refetchInterval: 5000, // Polling every 5 seconds
+    refetchInterval: 5000,
+  });
+
+  const acceptOfferMutation = useMutation({
+    mutationFn: async ({ rideId, offerId }: { rideId: number; offerId: number }) => {
+      const response = await axios.put(
+        `http://localhost:3001/api/v1/offer/select-offer`,
+        { ride_id: rideId, offer_id: offerId },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(["offers", rideId]);
+      queryClient.invalidateQueries(["userRides"]);
+      toast({
+        title: "Offer accepted",
+        description: `Your PIN is ${data.pin}. Please remember it for your ride.`,
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error accepting offer",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    },
+  });
+
+  const cancelRideMutation = useMutation({
+    mutationFn: async (rideId: number) => {
+      await axios.delete(`http://localhost:3001/api/v1/ride/${rideId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["userRides"]);
+      toast({
+        title: "Ride cancelled successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Error cancelling ride",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    },
   });
 
   const sortedOffers = offers?.sort((a, b) =>
-    sortBy === "price" ? a.price - b.price : b.rating - a.rating
+    sortBy === "price" ? a.price - b.price : b.driver.rating - a.driver.rating
   );
 
   const handleAccept = (offerId: number) => {
-    // Implement accept logic
-    console.log(`Accepted offer ${offerId}`);
+    acceptOfferMutation.mutate({ rideId, offerId });
   };
 
   const handleDecline = (offerId: number) => {
-    // Implement decline logic
-    console.log(`Declined offer ${offerId}`);
+    // For simplicity, we'll just remove the offer from the list
+    // In a real app, you might want to send this information to the backend
+    queryClient.setQueryData<Offer[]>(["offers", rideId], (oldData) => 
+      oldData ? oldData.filter(offer => offer.id !== offerId) : []
+    );
+  };
+
+  const handleCancelRide = () => {
+    cancelRideMutation.mutate(rideId);
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md">
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Offers</ModalHeader>
+        <ModalHeader>Offers for Ride #{rideId}</ModalHeader>
         <ModalBody>
           <Select
             mb={4}
@@ -134,6 +203,9 @@ const OffersModal: React.FC<OffersModalProps> = ({
           )}
         </ModalBody>
         <ModalFooter>
+          <Button colorScheme="red" mr={3} onClick={handleCancelRide}>
+            Cancel Ride
+          </Button>
           <Button colorScheme="blue" onClick={onClose}>
             Close
           </Button>
