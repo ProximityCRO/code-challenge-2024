@@ -19,12 +19,20 @@ import axios from "axios";
 
 interface Offer {
   id: number;
+  ride_id: number;
   driver: {
+    id: number;
     name: string;
     rating: number;
-    vehicle: string;
+  };
+  vehicle: {
+    brand: string;
+    model: string;
+    year: number;
+    color: string;
   };
   price: number;
+  selected: boolean;
 }
 
 interface OffersModalProps {
@@ -101,7 +109,9 @@ const OffersModal: React.FC<OffersModalProps> = ({
                     Rating: {offer.driver.rating} (
                     <Link href="#">Go to Reviews</Link>)
                   </Text>
-                  <Text>Vehicle: {offer.driver.vehicle}</Text>
+                  <Text>
+                    Vehicle: {offer.vehicle.brand} {offer.vehicle.model}
+                  </Text>
                   <HStack mt={2} spacing={2}>
                     <Button
                       colorScheme="green"
