@@ -99,7 +99,7 @@ const DriverDashboard: React.FC = () => {
           isClosable: true,
         });
         onClose();
-        // Here you might want to update the ride status or perform other actions
+        queryClient.invalidateQueries(['driverRides']);
       } else {
         toast({
           title: 'Invalid PIN',
@@ -108,7 +108,7 @@ const DriverDashboard: React.FC = () => {
           isClosable: true,
         });
       }
-    },
+    },    
     onError: () => {
       toast({
         title: 'Error validating PIN',
@@ -190,6 +190,8 @@ const DriverDashboard: React.FC = () => {
                   </HStack>
                 ) : ride.status.toUpperCase() === 'ACCEPTED' ? (
                   <Button colorScheme="green" onClick={() => handlePinValidation(ride.id)}>Validate PIN</Button>
+                ) : ride.status.toUpperCase() === 'COMPLETED' ? (
+                  <Text fontWeight="bold" color="blue.500">Ride Completed</Text>
                 ) : null}
               </VStack>
             </Box>

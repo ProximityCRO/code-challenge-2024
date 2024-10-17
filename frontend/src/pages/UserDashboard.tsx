@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   VStack,
@@ -16,18 +16,23 @@ import {
   ModalFooter,
   ModalCloseButton,
   useDisclosure,
+  Textarea,
+  FormControl,
+  FormLabel,
   useToast,
-} from '@chakra-ui/react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
-import NewRideRequest from './NewRideRequest';
-import OffersModal from '../components/User/OffersModal';
+  Input,
+} from "@chakra-ui/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
+import { Link } from "react-router-dom";
+import NewRideRequest from "./NewRideRequest";
+import OffersModal from "../components/User/OffersModal";
+import { useNavigate } from "react-router-dom";
 
 interface Ride {
   id: number;
-  status: 'REQUESTED' | 'ACCEPTED' | 'COMPLETED';
+  status: "REQUESTED" | "ACCEPTED" | "COMPLETED";
   destination_location: string;
   pickup_location: string;
   scheduled_time: string;
@@ -41,32 +46,51 @@ interface Ride {
 
 const UserDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const { isOpen: isNewRequestOpen, onOpen: onNewRequestOpen, onClose: onNewRequestClose } = useDisclosure();
-  const { isOpen: isOffersOpen, onOpen: onOffersOpen, onClose: onOffersClose } = useDisclosure();
+  const bgColor = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const {
+    isOpen: isNewRequestOpen,
+    onOpen: onNewRequestOpen,
+    onClose: onNewRequestClose,
+  } = useDisclosure();
+  const {
+    isOpen: isOffersOpen,
+    onOpen: onOffersOpen,
+    onClose: onOffersClose,
+  } = useDisclosure();
   const [selectedRideId, setSelectedRideId] = useState<number | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
 
-  const { data: rides, isLoading, isError } = useQuery<Ride[]>({
-    queryKey: ['userRides'],
+  const navigate = useNavigate();
+
+  const handleViewRide = (rideId: number) => {
+    navigate(`/ride/${rideId}`);
+  };
+
+  const {
+    data: rides,
+    isLoading,
+    isError,
+  } = useQuery<Ride[]>({
+    queryKey: ["userRides"],
     queryFn: async () => {
-      const response = await axios.get('http://localhost:3001/api/v1/ride', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      const response = await axios.get("http://localhost:3001/api/v1/ride", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       return response.data;
-    }
+    },
+    refetchInterval: 5000,
   });
 
   const deleteRideMutation = useMutation({
     mutationFn: async (rideId: number) => {
       await axios.delete(`http://localhost:3001/api/v1/ride/${rideId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['userRides']);
+      queryClient.invalidateQueries(["userRides"]);
       toast({
         title: "Ride deleted successfully",
         status: "success",
@@ -90,7 +114,7 @@ const UserDashboard: React.FC = () => {
 
   const renderRideButton = (ride: Ride) => {
     switch (ride.status.toUpperCase()) {
-      case 'REQUESTED':
+      case "REQUESTED":
         return (
           <VStack>
             <Button colorScheme="blue" onClick={() => handleOffers(ride.id)}>
@@ -101,13 +125,13 @@ const UserDashboard: React.FC = () => {
             </Button>
           </VStack>
         );
-      case 'ACCEPTED':
+      case "ACCEPTED":
         return (
-          <Text fontWeight="bold" color="green.500">
-            PIN: {ride.pin}
-          </Text>
+          <Button colorScheme="green" onClick={() => handleViewRide(ride.id)}>
+            PIN
+          </Button>
         );
-      case 'COMPLETED':
+      case "COMPLETED":
         return (
           <Button colorScheme="purple" onClick={() => handleReview(ride.id)}>
             Review
@@ -123,10 +147,88 @@ const UserDashboard: React.FC = () => {
     onOffersOpen();
   };
 
+  const {
+    isOpen: isReviewOpen,
+    onOpen: onReviewOpen,
+    onClose: onReviewClose,
+  } = useDisclosure();
+  const [rating, setRating] = useState<number>(0);
+  const [comments, setComments] = useState<string>("");
+  const [reviewRideId, setReviewRideId] = useState<number | null>(null);
+
   const handleReview = (rideId: number) => {
-    console.log(`Review ride ${rideId}`);
-    // Implement logic to leave a review
+    setReviewRideId(rideId);
+    onReviewOpen();
   };
+
+  const createReviewMutation = useMutation({
+    mutationFn: async (reviewData: {
+      driver_id: number;
+      user_id: number;
+      ride_id: number;
+      rating: number;
+      comments: string;
+    }) => {
+      const response = await axios.post('http://localhost:3001/api/v1/review', reviewData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Review submitted successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      onReviewClose();
+      setRating(0);
+      setComments('');
+      queryClient.invalidateQueries(['userRides']);
+    },
+    onError: () => {
+      toast({
+        title: 'Error submitting review',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    },
+  });
+  
+  const handleSubmitReview = () => {
+    if (!rating) {
+      toast({
+        title: 'Please provide a rating',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+  
+    const ride = rides?.find((ride) => ride.id === reviewRideId);
+    const driverId = ride?.offer?.driver_id;
+  
+    if (!driverId) {
+      toast({
+        title: 'Driver not found',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+  
+    createReviewMutation.mutate({
+      driver_id: driverId,
+      user_id: user!.id,
+      ride_id: reviewRideId!,
+      rating,
+      comments,
+    });
+  };
+  
 
   const handleDeleteRide = (rideId: number) => {
     deleteRideMutation.mutate(rideId);
@@ -136,7 +238,9 @@ const UserDashboard: React.FC = () => {
     <Box maxWidth="600px" margin="auto" mt={8} p={4}>
       {/* Navigation Menu */}
       <Flex justifyContent="space-between" mb={8}>
-        <Heading as="h1" size="xl">My Rides</Heading>
+        <Heading as="h1" size="xl">
+          My Rides
+        </Heading>
         <HStack spacing={4}>
           <Link to="/history">History</Link>
           <Link to="/profile">Profile</Link>
@@ -145,7 +249,13 @@ const UserDashboard: React.FC = () => {
       </Flex>
 
       {/* New Request Button */}
-      <Button colorScheme="blue" size="lg" width="100%" mb={8} onClick={onNewRequestOpen}>
+      <Button
+        colorScheme="blue"
+        size="lg"
+        width="100%"
+        mb={8}
+        onClick={onNewRequestOpen}
+      >
         New Request
       </Button>
 
@@ -158,11 +268,48 @@ const UserDashboard: React.FC = () => {
         </ModalContent>
       </Modal>
 
+      {/* Modal for Review */}
+      <Modal isOpen={isReviewOpen} onClose={onReviewClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Leave a Review</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl isRequired>
+              <FormLabel>Rating</FormLabel>
+              <Input
+                type="number"
+                max={5}
+                min={1}
+                value={rating}
+                onChange={(e) => setRating(Number(e.target.value))}
+              />
+            </FormControl>
+            <FormControl mt={4}>
+              <FormLabel>Comments</FormLabel>
+              <Textarea
+                placeholder="Write your comments"
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleSubmitReview}>
+              Submit
+            </Button>
+            <Button variant="ghost" onClick={onReviewClose}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       {/* Offers Modal */}
       {selectedRideId && (
-        <OffersModal 
-          isOpen={isOffersOpen} 
-          onClose={onOffersClose} 
+        <OffersModal
+          isOpen={isOffersOpen}
+          onClose={onOffersClose}
           rideId={selectedRideId}
         />
       )}
@@ -175,19 +322,34 @@ const UserDashboard: React.FC = () => {
       ) : (
         <VStack spacing={4} align="stretch">
           {rides?.map((ride) => (
-            <Box key={ride.id} p={4} borderWidth={1} borderRadius="md" borderColor={borderColor} bg={bgColor}>
+            <Box
+              key={ride.id}
+              p={4}
+              borderWidth={1}
+              borderRadius="md"
+              borderColor={borderColor}
+              bg={bgColor}
+            >
               <Flex justifyContent="space-between" alignItems="center">
                 <VStack align="start" spacing={1}>
-                  <Text fontWeight="bold">Request #{ride.id.toString().padStart(4, '0')}</Text>
+                  <Text fontWeight="bold">
+                    Request #{ride.id.toString().padStart(4, "0")}
+                  </Text>
                   <Text fontSize="sm">From: {ride.pickup_location}</Text>
                   <Text fontSize="sm">To: {ride.destination_location}</Text>
-                  <Text fontSize="sm">Date: {new Date(ride.scheduled_time).toLocaleString()}</Text>
-                  <Text fontSize="sm" color="gray.500">Status: {ride.status}</Text>
-                  {ride.offer && <Text fontSize="sm">Price: ${ride.offer.price.toFixed(2)}</Text>}
+                  <Text fontSize="sm">
+                    Date: {new Date(ride.scheduled_time).toLocaleString()}
+                  </Text>
+                  <Text fontSize="sm" color="gray.500">
+                    Status: {ride.status}
+                  </Text>
+                  {ride.offer && (
+                    <Text fontSize="sm">
+                      Price: ${ride.offer.price.toFixed(2)}
+                    </Text>
+                  )}
                 </VStack>
-                <Box>
-                  {renderRideButton(ride)}
-                </Box>
+                <Box>{renderRideButton(ride)}</Box>
               </Flex>
             </Box>
           ))}

@@ -15,6 +15,7 @@ import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
 import VehicleRegistrationForm from "./components/Driver/VehicleRegistrationForm";
+import RideDetails from "./components/User/RideDetails";
 import "./App.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { QueryClient } from "@tanstack/react-query";
@@ -54,6 +55,10 @@ const App: React.FC = () => {
                     role="driver"
                   />
                 }
+              />
+              <Route
+                path="/ride/:id"
+                element={<ProtectedRoute element={<RideDetails />} role="user" />}
               />
             </Routes>
           </AuthProvider>
@@ -117,6 +122,5 @@ const DriverRoute: React.FC<{ element: React.ReactElement }> = ({
     return <Navigate to="/vehicle-registration" replace />;
   return element;
 };
-
 
 export default App;
