@@ -5,6 +5,7 @@ import { AuthModule } from "./auth/auth.module";
 import { RidesModule } from "./rides/rides.module";
 import { OffersModule } from "./offers/offers.module";
 import { ReviewsModule } from "./reviews/reviews.module";
+import { VehiclesModule } from "./vehicles/vehicles.module";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ReviewsModule } from "./reviews/reviews.module";
     OffersModule,
     ReviewsModule,
     UsersModule,
+    VehiclesModule,
     AuthModule,
   ],
   controllers: [],
