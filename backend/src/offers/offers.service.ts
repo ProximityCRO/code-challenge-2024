@@ -9,10 +9,15 @@ import { Ride } from "../rides/entities/ride.entity";
 import { SelectOfferDto } from "./dto/select-offer.dto";
 import { RideResponseDto } from "../rides/dto/ride.dto";
 import { plainToInstance } from "class-transformer";
-import { generatePin } from "../common/utils/general.util";
+import {
+  createHtmlContent,
+  createTextContent,
+  generatePin,
+} from "../common/utils/general.util";
 import { Status } from "../common/enums/status.enum";
 import { OfferResponseExpandDto } from "./dto/offer.dto";
 import { Vehicle } from "../vehicles/entities/vehicle.entity";
+import { MailService } from "../common/mails/mail.service";
 
 @Injectable()
 export class OffersService {
@@ -25,6 +30,7 @@ export class OffersService {
     private readonly offerRepository: Repository<Offer>,
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
+    private readonly mailService: MailService,
   ) {}
 
   async create(createRideDto: CreateOfferDto, user: UserActiveInterface) {
@@ -106,7 +112,33 @@ export class OffersService {
       review: ride.review_id,
     };
 
-    //notify email
+    const driverToNotify = await this.userRepository.findOneBy({
+      id: offer.driver_id,
+    });
+
+    const userToNotify = await this.userRepository.findOneBy({
+      id: ride.user_id,
+    });
+
+    if (driverToNotify && userToNotify) {
+      const emailSubject = "Ride Confirmation";
+      const emailTextContent = createTextContent(
+        rideResponse,
+        driverToNotify,
+        userToNotify,
+      );
+      const emailHtmlContent = createHtmlContent(
+        rideResponse,
+        driverToNotify,
+        userToNotify,
+      );
+      await this.mailService.sendMail(
+        [userToNotify.email, driverToNotify.email],
+        emailSubject,
+        emailTextContent,
+        emailHtmlContent,
+      );
+    }
 
     return plainToInstance(RideResponseDto, rideResponse);
   }
