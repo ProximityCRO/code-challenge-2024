@@ -16,44 +16,50 @@ import UserDashboard from "./pages/UserDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
 import VehicleRegistrationForm from "./components/Driver/VehicleRegistrationForm";
 import "./App.css";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
-    <ChakraProvider>
-      <Router>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/user-dashboard"
-              element={
-                <ProtectedRoute element={<UserDashboard />} role="user" />
-              }
-            />
-            <Route
-              path="/driver-dashboard"
-              element={
-                <ProtectedRoute
-                  element={<DriverRoute element={<DriverDashboard />} />}
-                  role="driver"
-                />
-              }
-            />
-            <Route
-              path="/vehicle-registration"
-              element={
-                <ProtectedRoute
-                  element={<VehicleRegistrationForm />}
-                  role="driver"
-                />
-              }
-            />
-          </Routes>
-        </AuthProvider>
-      </Router>
-    </ChakraProvider>
+    <QueryClientProvider client={queryClient}>
+      <ChakraProvider>
+        <Router>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/user-dashboard"
+                element={
+                  <ProtectedRoute element={<UserDashboard />} role="user" />
+                }
+              />
+              <Route
+                path="/driver-dashboard"
+                element={
+                  <ProtectedRoute
+                    element={<DriverRoute element={<DriverDashboard />} />}
+                    role="driver"
+                  />
+                }
+              />
+              <Route
+                path="/vehicle-registration"
+                element={
+                  <ProtectedRoute
+                    element={<VehicleRegistrationForm />}
+                    role="driver"
+                  />
+                }
+              />
+            </Routes>
+          </AuthProvider>
+        </Router>
+      </ChakraProvider>
+    </QueryClientProvider>
   );
 };
 
