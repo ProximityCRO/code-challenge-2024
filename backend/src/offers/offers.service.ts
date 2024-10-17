@@ -12,6 +12,7 @@ import { plainToInstance } from "class-transformer";
 import { generatePin } from "../common/utils/general.util";
 import { Status } from "../common/enums/status.enum";
 import { OfferResponseExpandDto } from "./dto/offer.dto";
+import { Vehicle } from "../vehicles/entities/vehicle.entity";
 
 @Injectable()
 export class OffersService {
@@ -22,6 +23,8 @@ export class OffersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Offer)
     private readonly offerRepository: Repository<Offer>,
+    @InjectRepository(Vehicle)
+    private readonly vehicleRepository: Repository<Vehicle>,
   ) {}
 
   async create(createRideDto: CreateOfferDto, user: UserActiveInterface) {
@@ -46,6 +49,9 @@ export class OffersService {
         const driver = await this.userRepository.findOneBy({
           id: offer.driver_id,
         });
+        const vehicle = await this.vehicleRepository.findOneBy({
+          driver: driver,
+        });
         return plainToInstance(OfferResponseExpandDto, {
           id: offer.id,
           ride_id: offer.ride_id,
@@ -57,6 +63,7 @@ export class OffersService {
                 phone_number: driver.phone_number,
               }
             : null,
+          vehicle: vehicle ? vehicle : null,
           price: offer.price,
           selected: offer.selected,
         });
