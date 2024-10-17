@@ -11,6 +11,7 @@ import { plainToInstance } from "class-transformer";
 import { RideResponseDto } from "./dto/ride.dto";
 import { Offer } from "../offers/entities/offer.entity";
 import { Review } from "../reviews/entities/review.entity";
+import { ValidationRideDto } from "./dto/validation-ride.dto";
 
 @Injectable()
 export class RidesService {
@@ -31,6 +32,16 @@ export class RidesService {
       ...createRideDto,
       user: current_user,
     });
+  }
+
+  async validation(
+    validationRideDto: ValidationRideDto,
+    user: UserActiveInterface,
+  ) {
+    const ride = await this.rideRepository.findOneBy({
+      id: validationRideDto.ride_id,
+    });
+    return { validation: ride && ride.pin === validationRideDto.pin };
   }
 
   async findAll(user: UserActiveInterface) {
