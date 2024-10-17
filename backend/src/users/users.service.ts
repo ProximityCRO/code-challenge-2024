@@ -26,6 +26,9 @@ export class UsersService {
 
   async profile(email: string) {
     let user = await this.userRepository.findOneBy({ email });
+    if (!user) {
+      return null;
+    }
     let reviews = [];
     let vehicle = null;
     if (user.role === Role.DRIVER) {
