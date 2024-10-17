@@ -10,6 +10,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
     name: string,
@@ -21,12 +22,14 @@ interface AuthContextType {
   logout: () => void;
 }
 
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const checkAuth = () => {
     const token = localStorage.getItem("token");
@@ -34,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const userId = localStorage.getItem("userId");
       const userRole = localStorage.getItem("userRole");
       const userEmail = localStorage.getItem("userEmail");
-
+  
       if (userId && userRole && userEmail) {
         const user = {
           id: parseInt(userId),
@@ -43,11 +46,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           role: userRole as "user" | "driver",
         };
         setUser(user);
-        return user;
       }
+    } else {
+      setUser(null);
     }
-    return null;
+    setIsLoading(false);
   };
+  
 
   useEffect(() => {
     checkAuth();
@@ -131,7 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

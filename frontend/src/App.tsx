@@ -67,7 +67,9 @@ const ProtectedRoute: React.FC<{
   element: React.ReactElement;
   role?: "user" | "driver";
 }> = ({ element, role }) => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (role && user.role !== role) return <Navigate to="/" replace />;
   return element;
@@ -76,7 +78,7 @@ const ProtectedRoute: React.FC<{
 const DriverRoute: React.FC<{ element: React.ReactElement }> = ({
   element,
 }) => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [hasVehicle, setHasVehicle] = useState<boolean | null>(null);
   const navigate = useNavigate();
 
@@ -105,15 +107,16 @@ const DriverRoute: React.FC<{ element: React.ReactElement }> = ({
       }
     };
 
-    if (user && user.role === "driver") {
+    if (!isLoading && user && user.role === "driver") {
       checkVehicle();
     }
-  }, [user, navigate]);
+  }, [user, navigate, isLoading]);
 
-  if (hasVehicle === null) return null; // Loading state
+  if (isLoading || hasVehicle === null) return null; // Estado de carga
   if (hasVehicle === false)
     return <Navigate to="/vehicle-registration" replace />;
   return element;
 };
+
 
 export default App;
