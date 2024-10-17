@@ -2,14 +2,16 @@ import { Injectable } from "@nestjs/common";
 import * as https from "https";
 import * as FormData from "form-data";
 import * as fs from "node:fs";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 @Injectable()
 export class OpenAIService {
   private readonly openaiApiKey: string;
 
   constructor() {
-    this.openaiApiKey =
-      "sk-Buhltby20new2kPMkEaHFGhd-Qk3TLIqFlyPz_IkYJT3BlbkFJBtetbtyuQ84MwuFEwz3VxEeFJPm7-uEIudyQpBl0oA";
+    this.openaiApiKey = process.env.OPENAI_API_KEY;
   }
 
   async transcribeAudio(filePath: string): Promise<any> {
