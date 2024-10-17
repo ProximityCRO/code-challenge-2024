@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Role } from "../common/enums/rol.enum";
@@ -12,6 +12,7 @@ import { RideResponseDto } from "./dto/ride.dto";
 import { Offer } from "../offers/entities/offer.entity";
 import { Review } from "../reviews/entities/review.entity";
 import { ValidationRideDto } from "./dto/validation-ride.dto";
+import { isError } from "@nestjs/cli/lib/utils/is-error";
 
 @Injectable()
 export class RidesService {
@@ -42,6 +43,19 @@ export class RidesService {
       id: validationRideDto.ride_id,
     });
     return { validation: ride && ride.pin === validationRideDto.pin };
+  }
+
+  async delete(id: number) {
+    const ride = await this.rideRepository.findOneBy({
+      id: id,
+    });
+    if (ride && ride.status === Status.REQUESTED) {
+      return this.rideRepository.delete(id);
+    } else {
+      throw new BadRequestException(
+        "Only rides with status REQUESTED can be deleted.",
+      );
+    }
   }
 
   async findAll(user: UserActiveInterface) {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { Auth } from "src/auth/decorators/auth.decorator";
 import { ActiveUser } from "src/common/decorators/active-user.decorator";
 import { Role } from "src/common/enums/rol.enum";
@@ -31,5 +31,13 @@ export class RidesController {
     @ActiveUser() user: UserActiveInterface,
   ) {
     return this.ridesService.validation(validationRideDto, user);
+  }
+
+  @Delete(":id")
+  delete(
+    @Param("id") ride_id: number,
+    @ActiveUser() user: UserActiveInterface,
+  ) {
+    return this.ridesService.delete(ride_id);
   }
 }
