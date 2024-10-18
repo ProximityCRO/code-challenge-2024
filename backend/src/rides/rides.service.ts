@@ -12,7 +12,7 @@ import { RideResponseDto } from "./dto/ride.dto";
 import { Offer } from "../offers/entities/offer.entity";
 import { Review } from "../reviews/entities/review.entity";
 import { ValidationRideDto } from "./dto/validation-ride.dto";
-import { isError } from "@nestjs/cli/lib/utils/is-error";
+import { UpdateRideDto } from "./dto/update-ride.dto";
 
 @Injectable()
 export class RidesService {
@@ -42,7 +42,13 @@ export class RidesService {
     const ride = await this.rideRepository.findOneBy({
       id: validationRideDto.ride_id,
     });
-    return { validation: ride && ride.pin === validationRideDto.pin };
+    if (ride && ride.pin === validationRideDto.pin) {
+      await this.rideRepository.update(validationRideDto.ride_id, {
+        status: Status.STARTED,
+      });
+      return { validation: true };
+    }
+    return { validation: false };
   }
 
   async delete(id: number) {
@@ -56,6 +62,18 @@ export class RidesService {
         "Only rides with status REQUESTED can be deleted.",
       );
     }
+  }
+
+  async findOne(id: number) {
+    return await this.rideRepository.findOneBy({
+      id: id,
+    });
+  }
+
+  async updateStatus(updateRideDto: UpdateRideDto) {
+    return await this.rideRepository.update(updateRideDto.ride_id, {
+      status: updateRideDto.status,
+    });
   }
 
   async findAll(user: UserActiveInterface) {
