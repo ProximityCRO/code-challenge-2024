@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   VStack,
@@ -11,11 +11,17 @@ import {
   Icon,
   Button,
   useToast,
-} from '@chakra-ui/react';
-import { StarIcon, EmailIcon, PhoneIcon } from '@chakra-ui/icons';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+} from "@chakra-ui/react";
+import {
+  StarIcon,
+  EmailIcon,
+  PhoneIcon,
+  ArrowBackIcon,
+} from "@chakra-ui/icons";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 // Interface definitions
 interface Review {
@@ -40,7 +46,7 @@ interface UserProfileData {
   name: string;
   email: string;
   phone_number: string;
-  role: 'user' | 'driver';
+  role: "user" | "driver";
   vehicle: Vehicle | null;
   reviews: Review[] | null;
 }
@@ -49,19 +55,27 @@ const UserProfile: React.FC = () => {
   // Hooks and context
   const { user, logout } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
 
   // Theme variables
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const primaryColor = '#1F41BB';
+  const bgColor = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const primaryColor = "#1F41BB";
 
   // Fetch user profile data
-  const { data: profileData, isLoading, isError } = useQuery<UserProfileData>({
-    queryKey: ['userProfile'],
+  const {
+    data: profileData,
+    isLoading,
+    isError,
+  } = useQuery<UserProfileData>({
+    queryKey: ["userProfile"],
     queryFn: async () => {
-      const response = await axios.get('http://localhost:3001/api/v1/auth/profile/', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      const response = await axios.get(
+        "http://localhost:3001/api/v1/auth/profile/",
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
       return response.data;
     },
   });
@@ -72,8 +86,8 @@ const UserProfile: React.FC = () => {
 
   if (isError || !profileData) {
     toast({
-      title: 'Error loading profile.',
-      status: 'error',
+      title: "Error loading profile.",
+      status: "error",
       duration: 3000,
       isClosable: true,
     });
@@ -91,6 +105,16 @@ const UserProfile: React.FC = () => {
       borderRadius="md"
       borderColor={borderColor}
     >
+      {/* Go Back Button */}
+      <Button
+        leftIcon={<ArrowBackIcon />}
+        variant="ghost"
+        onClick={() => navigate(-1)}
+        mb={4}
+      >
+        Back
+      </Button>
+
       <VStack spacing={6} align="stretch">
         {/* User Info */}
         <HStack spacing={4}>
@@ -120,7 +144,7 @@ const UserProfile: React.FC = () => {
         </VStack>
 
         {/* Vehicle Info for Drivers */}
-        {profileData.role === 'driver' && profileData.vehicle && (
+        {profileData.role === "driver" && profileData.vehicle && (
           <>
             <Divider />
             <Heading as="h3" size="md">
@@ -144,32 +168,40 @@ const UserProfile: React.FC = () => {
         )}
 
         {/* Reviews for Drivers */}
-        {profileData.role === 'driver' && profileData.reviews && profileData.reviews.length > 0 && (
-          <>
-            <Divider />
-            <Heading as="h3" size="md">
-              Reviews
-            </Heading>
-            <VStack align="start" spacing={4}>
-              {profileData.reviews.map((review) => (
-                <Box key={review.id} p={4} borderWidth={1} borderRadius="md" width="100%">
-                  <HStack spacing={1} alignItems="center">
-                    {[...Array(5)].map((_, i) => (
-                      <Icon
-                        key={i}
-                        as={StarIcon}
-                        color={i < review.rating ? 'yellow.400' : 'gray.300'}
-                      />
-                    ))}
-                  </HStack>
-                  <Text mt={2} fontStyle="italic">
-                    "{review.comments}"
-                  </Text>
-                </Box>
-              ))}
-            </VStack>
-          </>
-        )}
+        {profileData.role === "driver" &&
+          profileData.reviews &&
+          profileData.reviews.length > 0 && (
+            <>
+              <Divider />
+              <Heading as="h3" size="md">
+                Reviews
+              </Heading>
+              <VStack align="start" spacing={4}>
+                {profileData.reviews.map((review) => (
+                  <Box
+                    key={review.id}
+                    p={4}
+                    borderWidth={1}
+                    borderRadius="md"
+                    width="100%"
+                  >
+                    <HStack spacing={1} alignItems="center">
+                      {[...Array(5)].map((_, i) => (
+                        <Icon
+                          key={i}
+                          as={StarIcon}
+                          color={i < review.rating ? "yellow.400" : "gray.300"}
+                        />
+                      ))}
+                    </HStack>
+                    <Text mt={2} fontStyle="italic">
+                      "{review.comments}"
+                    </Text>
+                  </Box>
+                ))}
+              </VStack>
+            </>
+          )}
 
         {/* Logout Button */}
         <Divider />
