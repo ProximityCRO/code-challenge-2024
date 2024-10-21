@@ -69,7 +69,7 @@ export class OpenAIService {
   async chatGpt(textDTO: TextDTO): Promise<any> {
     const userPrompt = `Text is a place where the user is located: ${textDTO.text}`;
     const systemPrompt = `
-    Please identify the language of the text and present a list of tourist places that the user could visit. The response should be formatted as JSON, as follows:
+    Please identify the language of the text and present a list of tourist places that the user could visit. The response should be formatted as a valid JSON array with a minimum of 1 place and a maximum of 4 places, as follows:
     [
       {
         "place": "Place to visit.",
@@ -77,6 +77,7 @@ export class OpenAIService {
         "description": "Description of what the place is and what can be done when visiting it."
       }
     ]
+    Ensure that the JSON is properly formatted and closed. Do not include any markdown syntax or additional text outside the JSON array.
     `;
 
     const requestBody = JSON.stringify({
