@@ -6,18 +6,7 @@ import {
   Text,
   Button,
   useToast,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
   useDisclosure,
-  Input,
-  FormControl,
-  FormLabel,
-  Textarea,
   Divider,
 } from "@chakra-ui/react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
@@ -89,13 +78,12 @@ const RideDetails: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-      queryClient.invalidateQueries(["userRides"]);
-      queryClient.invalidateQueries(["ride", rideId]);
-      // Actualizar el estado local del ride
+      queryClient.invalidateQueries({ queryKey: ["userRides"] });
+      queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
       setRide((prevRide) =>
         prevRide ? { ...prevRide, status: "COMPLETED" } : prevRide
       );
-      // Abrir el modal para dejar una reseña
+
       onReviewOpen();
     },
     onError: () => {
