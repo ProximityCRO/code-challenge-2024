@@ -32,7 +32,7 @@ import { useNavigate } from "react-router-dom";
 
 interface Ride {
   id: number;
-  status: "REQUESTED" | "ACCEPTED" | "COMPLETED";
+  status: "REQUESTED" | "ACCEPTED" | "STARTED" | "COMPLETED";
   destination_location: string;
   pickup_location: string;
   scheduled_time: string;
@@ -131,6 +131,12 @@ const UserDashboard: React.FC = () => {
             PIN
           </Button>
         );
+      case "STARTED":
+        return (
+          <Button colorScheme="orange" onClick={() => handleCompleteRide(ride.id)}>
+            Complete Ride
+          </Button>
+        );
       case "COMPLETED":
         return (
           <Button colorScheme="purple" onClick={() => handleReview(ride.id)}>
@@ -159,6 +165,44 @@ const UserDashboard: React.FC = () => {
   const handleReview = (rideId: number) => {
     setReviewRideId(rideId);
     onReviewOpen();
+  };
+
+  const completeRideMutation = useMutation({
+    mutationFn: async (rideId: number) => {
+      const response = await axios.patch(
+        'http://localhost:3001/api/v1/ride/update-status',
+        { ride_id: rideId, status: 'completed' },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userRides']);
+      toast({
+        title: 'Ride completed successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      handleReview(rideIdForCompletion!);
+    },
+    onError: () => {
+      toast({
+        title: 'Error completing ride',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    },
+  });
+
+  const [rideIdForCompletion, setRideIdForCompletion] = useState<number | null>(null);
+
+  const handleCompleteRide = (rideId: number) => {
+    setRideIdForCompletion(rideId);
+    completeRideMutation.mutate(rideId);
   };
 
   const createReviewMutation = useMutation({

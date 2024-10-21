@@ -83,6 +83,36 @@ const DriverDashboard: React.FC = () => {
     },
   });
 
+  const updateRideStatusMutation = useMutation({
+    mutationFn: async (data: { ride_id: number; status: string }) => {
+      const response = await axios.patch(
+        'http://localhost:3001/api/v1/ride/update-status',
+        data,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['driverRides']);
+      toast({
+        title: 'Ride status updated to started',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error updating ride status',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    },
+  });
+
   const validatePinMutation = useMutation({
     mutationFn: async (data: { ride_id: number; pin: string }) => {
       const response = await axios.post('http://localhost:3001/api/v1/ride/validation', data, {
@@ -99,7 +129,7 @@ const DriverDashboard: React.FC = () => {
           isClosable: true,
         });
         onClose();
-        queryClient.invalidateQueries(['driverRides']);
+        updateRideStatusMutation.mutate({ ride_id: selectedRideId, status: 'started' });
       } else {
         toast({
           title: 'Invalid PIN',
@@ -190,6 +220,8 @@ const DriverDashboard: React.FC = () => {
                   </HStack>
                 ) : ride.status.toUpperCase() === 'ACCEPTED' ? (
                   <Button colorScheme="green" onClick={() => handlePinValidation(ride.id)}>Validate PIN</Button>
+                ) : ride.status.toUpperCase() === 'STARTED' ? (
+                  <Text fontWeight="bold" color="blue.500">Ride in progress</Text>
                 ) : ride.status.toUpperCase() === 'COMPLETED' ? (
                   <Text fontWeight="bold" color="blue.500">Ride Completed</Text>
                 ) : null}
