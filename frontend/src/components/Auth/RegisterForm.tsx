@@ -149,7 +149,7 @@ const RegisterForm: React.FC = () => {
         </VStack>
       </form>
     </Box>
-  );ß
+  );
 };
 
 export default RegisterForm;

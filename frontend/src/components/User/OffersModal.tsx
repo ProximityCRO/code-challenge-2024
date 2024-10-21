@@ -14,11 +14,11 @@ import {
   Select,
   Link,
   useToast,
-  Input,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
+// Interface definitions for Offer and component props
 interface Offer {
   id: number;
   ride_id: number;
@@ -48,11 +48,14 @@ const OffersModal: React.FC<OffersModalProps> = ({
   onClose,
   rideId,
 }) => {
+  // State variables
   const [sortBy, setSortBy] = useState<"price" | "rating">("price");
-  const [pin, setPin] = useState<string>("");
+
+  // Hooks
   const toast = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch offers data
   const {
     data: offers,
     isLoading,
@@ -71,10 +74,17 @@ const OffersModal: React.FC<OffersModalProps> = ({
     refetchInterval: 5000,
   });
 
+  // Mutation to accept an offer
   const acceptOfferMutation = useMutation({
-    mutationFn: async ({ rideId, offerId }: { rideId: number; offerId: number }) => {
+    mutationFn: async ({
+      rideId,
+      offerId,
+    }: {
+      rideId: number;
+      offerId: number;
+    }) => {
       const response = await axios.put(
-        `http://localhost:3001/api/v1/offer/select-offer`,
+        "http://localhost:3001/api/v1/offer/select-offer",
         { ride_id: rideId, offer_id: offerId },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -83,8 +93,11 @@ const OffersModal: React.FC<OffersModalProps> = ({
       return response.data;
     },
     onSuccess: (data) => {
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries(["offers", rideId]);
       queryClient.invalidateQueries(["userRides"]);
+
+      // Show success toast with PIN
       toast({
         title: "Offer accepted",
         description: `Your PIN is ${data.pin}. Please remember it for your ride.`,
@@ -104,6 +117,7 @@ const OffersModal: React.FC<OffersModalProps> = ({
     },
   });
 
+  // Mutation to cancel a ride
   const cancelRideMutation = useMutation({
     mutationFn: async (rideId: number) => {
       await axios.delete(`http://localhost:3001/api/v1/ride/${rideId}`, {
@@ -111,6 +125,7 @@ const OffersModal: React.FC<OffersModalProps> = ({
       });
     },
     onSuccess: () => {
+      // Invalidate user rides query to refresh data
       queryClient.invalidateQueries(["userRides"]);
       toast({
         title: "Ride cancelled successfully",
@@ -130,18 +145,20 @@ const OffersModal: React.FC<OffersModalProps> = ({
     },
   });
 
+  // Sort offers based on selected criteria
   const sortedOffers = offers?.sort((a, b) =>
     sortBy === "price" ? a.price - b.price : b.driver.rating - a.driver.rating
   );
 
+  // Event handlers
   const handleAccept = (offerId: number) => {
     acceptOfferMutation.mutate({ rideId, offerId });
   };
 
   const handleDecline = (offerId: number) => {
-    // For simplicity, we'll just remove the offer from the list
-    queryClient.setQueryData<Offer[]>(["offers", rideId], (oldData) => 
-      oldData ? oldData.filter(offer => offer.id !== offerId) : []
+    // For simplicity, remove the offer from the list without notifying the server
+    queryClient.setQueryData<Offer[]>(["offers", rideId], (oldData) =>
+      oldData ? oldData.filter((offer) => offer.id !== offerId) : []
     );
   };
 
@@ -149,6 +166,7 @@ const OffersModal: React.FC<OffersModalProps> = ({
     cancelRideMutation.mutate(rideId);
   };
 
+  // Constants
   const primaryColor = "#1F41BB";
 
   return (
@@ -157,6 +175,7 @@ const OffersModal: React.FC<OffersModalProps> = ({
       <ModalContent>
         <ModalHeader>Offers for Ride #{rideId}</ModalHeader>
         <ModalBody>
+          {/* Sorting Options */}
           <Select
             mb={4}
             value={sortBy}
@@ -165,6 +184,8 @@ const OffersModal: React.FC<OffersModalProps> = ({
             <option value="price">Sort by Price</option>
             <option value="rating">Sort by Rating</option>
           </Select>
+
+          {/* Offers List */}
           {isLoading ? (
             <Text>Loading offers...</Text>
           ) : isError ? (
@@ -207,7 +228,12 @@ const OffersModal: React.FC<OffersModalProps> = ({
           <Button colorScheme="red" mr={3} onClick={handleCancelRide}>
             Cancel Ride
           </Button>
-          <Button bg={primaryColor} _hover={{ bg: "#15339E" }} color="white" onClick={onClose}>
+          <Button
+            bg={primaryColor}
+            _hover={{ bg: "#15339E" }}
+            color="white"
+            onClick={onClose}
+          >
             Close
           </Button>
         </ModalFooter>

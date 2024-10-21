@@ -8,6 +8,12 @@ import {
   useToast,
   useDisclosure,
   Divider,
+  Progress,
+  HStack,
+  Icon,
+  FormControl,
+  FormLabel,
+  Textarea,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -15,12 +21,6 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Textarea,
-  Progress,
-  HStack,
-  Icon,
 } from "@chakra-ui/react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 import { StarIcon } from "@chakra-ui/icons";
 
+// Interface definitions
 interface Driver {
   id: number;
   email: string;
@@ -70,25 +71,45 @@ interface Ride {
   };
 }
 
+// StarRating component
+const StarRating = ({ rating, setRating }) => (
+  <HStack spacing={2}>
+    {[1, 2, 3, 4, 5].map((i) => (
+      <Icon
+        key={i}
+        as={StarIcon}
+        color={i <= rating ? "yellow.400" : "gray.300"}
+        w={8}
+        h={8}
+        cursor="pointer"
+        onClick={() => setRating(i)}
+      />
+    ))}
+  </HStack>
+);
+
 const RideDetails: React.FC = () => {
+  // Hooks
   const { id } = useParams<{ id: string }>();
   const rideId = Number(id);
   const navigate = useNavigate();
   const toast = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // State variables
   const [rating, setRating] = useState<number>(0);
   const [comments, setComments] = useState<string>("");
-
-  const primaryColor = "#1F41BB";
-
   const {
     isOpen: isReviewOpen,
     onOpen: onReviewOpen,
     onClose: onReviewClose,
   } = useDisclosure();
 
-  // Obtener los detalles del ride
+  // Constants
+  const primaryColor = "#1F41BB";
+
+  // Fetch ride details
   const {
     data: ride,
     isLoading: isRideLoading,
@@ -104,10 +125,10 @@ const RideDetails: React.FC = () => {
       );
       return response.data;
     },
-    refetchInterval: 5000, // Refrescar cada 5 segundos
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
-  // Obtener las ofertas del ride
+  // Fetch offers for the ride
   const {
     data: offers,
     isLoading: isOffersLoading,
@@ -125,7 +146,7 @@ const RideDetails: React.FC = () => {
     },
   });
 
-  // Mutación para completar el ride
+  // Mutation to complete the ride
   const completeRideMutation = useMutation({
     mutationFn: async () => {
       await axios.patch(
@@ -157,7 +178,7 @@ const RideDetails: React.FC = () => {
     },
   });
 
-  // Mutación para crear una reseña
+  // Mutation to create a review
   const createReviewMutation = useMutation({
     mutationFn: async (reviewData: {
       driver_id: number;
@@ -206,7 +227,7 @@ const RideDetails: React.FC = () => {
     },
   });
 
-  // Manejo de estados de carga y error
+  // Handle loading and error states
   if (isRideLoading || isOffersLoading) {
     return <Text>Loading ride details...</Text>;
   }
@@ -222,7 +243,7 @@ const RideDetails: React.FC = () => {
     return null;
   }
 
-  // Encontrar la oferta seleccionada
+  // Find the selected offer
   const selectedOffer = offers.find((offer) => offer.selected);
 
   if (!selectedOffer) {
@@ -236,9 +257,10 @@ const RideDetails: React.FC = () => {
     return null;
   }
 
-  // Crear un nuevo objeto ride que incluya la oferta seleccionada
+  // Combine ride data with the selected offer
   const rideWithOffer = { ...ride, offer: selectedOffer };
 
+  // Event handlers
   const handleCompleteRide = () => {
     completeRideMutation.mutate();
   };
@@ -275,24 +297,7 @@ const RideDetails: React.FC = () => {
     });
   };
 
-  const StarRating = ({ rating, setRating }) => {
-    return (
-      <HStack spacing={2}>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Icon
-            key={i}
-            as={StarIcon}
-            color={i <= rating ? "yellow.400" : "gray.300"}
-            w={8}
-            h={8}
-            cursor="pointer"
-            onClick={() => setRating(i)}
-          />
-        ))}
-      </HStack>
-    );
-  };
-
+  // JSX return
   return (
     <Box
       maxWidth="600px"

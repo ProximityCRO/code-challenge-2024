@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -10,61 +9,76 @@ import {
   Heading,
   useToast,
   Text,
-} from '@chakra-ui/react';
-import axios from 'axios';
-import { useAuth } from '../../contexts/AuthContext';
+} from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+import { useAuth } from "../../contexts/AuthContext";
 
 const VehicleRegistrationForm: React.FC = () => {
-  const [brand, setBrand] = useState('');
-  const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
-  const [color, setColor] = useState('');
+  // State variables for form inputs
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
+  const [year, setYear] = useState("");
+  const [color, setColor] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Hooks for authentication, navigation, and toast notifications
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      console.log(`${user?.id} ${brand} ${model} ${year} ${color}`);
-      
-      const response = await axios.post('http://localhost:3001/api/v1/vehicle', {
-        driver_id: user?.id,
-        brand,
-        model,
-        year: parseInt(year),
-        color,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      // Make API request to register the vehicle
+      const response = await axios.post(
+        "http://localhost:3001/api/v1/vehicle",
+        {
+          // You might not need to send driver_id if it's extracted from the token server-side
+          driver_id: user?.id,
+          brand,
+          model,
+          year: parseInt(year),
+          color,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
+      );
 
+      // Show success toast notification
       toast({
-        title: 'Vehicle registered successfully',
+        title: "Vehicle registered successfully",
         description: `Your ${color} ${brand} ${model} has been registered.`,
-        status: 'success',
+        status: "success",
         duration: 3000,
         isClosable: true,
       });
 
-      // Store vehicle information in local storage
-      localStorage.setItem('userVehicle', JSON.stringify(response.data));
+      // Store vehicle information in local storage (if needed)
+      localStorage.setItem("userVehicle", JSON.stringify(response.data));
 
-      navigate('/driver-dashboard');
+      // Navigate to driver dashboard
+      navigate("/driver-dashboard");
     } catch (error) {
-      console.error('Vehicle registration failed:', error);
-      let errorMessage = 'Please try again';
+      console.error("Vehicle registration failed:", error);
+
+      let errorMessage = "Please try again";
       if (axios.isAxiosError(error) && error.response) {
         errorMessage = error.response.data.message || errorMessage;
       }
+
+      // Show error toast notification
       toast({
-        title: 'Vehicle registration failed',
+        title: "Vehicle registration failed",
         description: errorMessage,
-        status: 'error',
+        status: "error",
         duration: 5000,
         isClosable: true,
       });
@@ -127,7 +141,8 @@ const VehicleRegistrationForm: React.FC = () => {
         </VStack>
       </form>
       <Text mt={4} fontSize="sm" color="gray.600">
-        Note: You can edit your vehicle information later in your profile settings.
+        Note: You can edit your vehicle information later in your profile
+        settings.
       </Text>
     </Box>
   );

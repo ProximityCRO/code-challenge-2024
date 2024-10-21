@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   VStack,
   Heading,
@@ -9,11 +9,13 @@ import {
   FormLabel,
   ModalBody,
   ModalFooter,
-} from '@chakra-ui/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+} from "@chakra-ui/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
+import { useAuth } from "../contexts/AuthContext";
+
+// Interface for ride request data
 interface RideRequest {
   pickup_location: string;
   destination_location: string;
@@ -21,28 +23,38 @@ interface RideRequest {
 }
 
 const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [pickup, setPickup] = useState('');
-  const [destination, setDestination] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  // State variables for form inputs
+  const [pickup, setPickup] = useState("");
+  const [destination, setDestination] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+
+  // Context and hooks
   const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
 
+  // Constants
   const primaryColor = "#1F41BB";
 
+  // Mutation to create a new ride request
   const createRideMutation = useMutation({
     mutationFn: async (newRide: RideRequest) => {
-      const response = await axios.post('http://localhost:3001/api/v1/ride', newRide, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await axios.post(
+        "http://localhost:3001/api/v1/ride",
+        newRide,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['userRides']);
+      // Invalidate userRides query to refetch data
+      queryClient.invalidateQueries(["userRides"]);
       toast({
-        title: 'Ride requested successfully',
-        status: 'success',
+        title: "Ride requested successfully",
+        status: "success",
         duration: 3000,
         isClosable: true,
       });
@@ -50,16 +62,17 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     },
     onError: (error) => {
       toast({
-        title: 'Error creating ride request',
-        description: 'Please try again later',
-        status: 'error',
+        title: "Error creating ride request",
+        description: "Please try again later",
+        status: "error",
         duration: 3000,
         isClosable: true,
       });
-      console.error('Error creating ride request:', error);
+      console.error("Error creating ride request:", error);
     },
   });
 
+  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const scheduledTime = `${date}T${time}:00`;
@@ -75,7 +88,9 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     <form onSubmit={handleSubmit}>
       <ModalBody>
         <VStack spacing={4} align="stretch">
-          <Heading size="md" textAlign="center">Request a Ride</Heading>
+          <Heading size="md" textAlign="center">
+            Request a Ride
+          </Heading>
           <FormControl isRequired>
             <FormLabel>Pickup Location</FormLabel>
             <Input
@@ -121,7 +136,9 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         >
           Send Request
         </Button>
-        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
       </ModalFooter>
     </form>
   );
