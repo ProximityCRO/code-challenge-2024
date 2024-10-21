@@ -323,7 +323,7 @@ const UserDashboard: React.FC = () => {
       case "ACCEPTED":
         return (
           <Button colorScheme="green" onClick={() => handleViewRide(ride)}>
-            PIN
+            See Ride Details
           </Button>
         );
       case "STARTED":

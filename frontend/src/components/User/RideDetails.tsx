@@ -21,12 +21,14 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  Flex,
+  Badge,
 } from "@chakra-ui/react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
-import { StarIcon } from "@chakra-ui/icons";
+import { StarIcon, ChevronLeftIcon, TimeIcon, PhoneIcon, EmailIcon, InfoIcon } from "@chakra-ui/icons";
 
 // Interface definitions
 interface Driver {
@@ -108,6 +110,17 @@ const RideDetails: React.FC = () => {
 
   // Constants
   const primaryColor = "#1F41BB";
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "REQUESTED": return "yellow";
+      case "ACCEPTED": return "green";
+      case "STARTED": return "blue";
+      case "COMPLETED": return "purple";
+      default: return "gray";
+    }
+  };
 
   // Fetch ride details
   const {
@@ -299,44 +312,70 @@ const RideDetails: React.FC = () => {
 
   // JSX return
   return (
-    <Box
-      maxWidth="600px"
-      margin="auto"
-      mt={8}
-      p={6}
-      borderWidth={1}
-      borderRadius="md"
-      boxShadow="lg"
-      bg="white"
-    >
-      <VStack spacing={6} align="stretch">
-        <Heading as="h2" size="xl" textAlign="center" color={primaryColor}>
-          Ride Details
-        </Heading>
+    <Box maxWidth="800px" margin="auto" mt={8} p={6} borderRadius="lg" boxShadow="xl" bg="white">
+            <VStack spacing={6} align="stretch">
+        <Flex justifyContent="space-between" alignItems="center">
+          <Button leftIcon={<ChevronLeftIcon />} onClick={() => navigate("/user-dashboard")} variant="ghost">
+            Back to Dashboard
+          </Button>
+          <Heading as="h2" size="xl" color={primaryColor}>
+            Ride Details
+          </Heading>
+          <Box width="40px" /> {/* This empty box is to balance the flex layout */}
+        </Flex>
         <Divider />
-        <Text fontSize="lg">
-          <strong>From:</strong> {rideWithOffer.pickup_location}
-        </Text>
-        <Text fontSize="lg">
-          <strong>To:</strong> {rideWithOffer.destination_location}
-        </Text>
-        <Text fontSize="lg">
-          <strong>Date:</strong>{" "}
-          {new Date(rideWithOffer.scheduled_time).toLocaleString()}
-        </Text>
-        <Text fontSize="lg">
-          <strong>Status:</strong>{" "}
-          <Text as="span" fontWeight="bold" color={primaryColor}>
+        
+        <Flex justifyContent="space-between" alignItems="center">
+          <Badge colorScheme={getStatusColor(rideWithOffer.status)} fontSize="1em" p={2} borderRadius="full">
             {rideWithOffer.status}
+          </Badge>
+          <Text fontWeight="bold" fontSize="lg">
+            Ride #{rideWithOffer.id.toString().padStart(4, "0")}
           </Text>
-        </Text>
-        <Text fontSize="lg">
-          <strong>Driver:</strong> {rideWithOffer.offer.driver.name}
-        </Text>
-        <Text fontSize="lg">
-          <strong>Price:</strong> ${rideWithOffer.offer.price.toFixed(2)}
-        </Text>
-        <Divider />
+        </Flex>
+
+        <Box bg="gray.50" p={4} borderRadius="md">
+          <VStack align="stretch" spacing={3}>
+            <HStack>
+              <Icon as={ChevronLeftIcon} color={primaryColor} />
+              <Text fontWeight="medium">From: {rideWithOffer.pickup_location}</Text>
+            </HStack>
+            <HStack>
+              <Icon as={ChevronLeftIcon} transform="rotate(180deg)" color={primaryColor} />
+              <Text fontWeight="medium">To: {rideWithOffer.destination_location}</Text>
+            </HStack>
+            <HStack>
+              <Icon as={TimeIcon} color={primaryColor} />
+              <Text>{new Date(rideWithOffer.scheduled_time).toLocaleString()}</Text>
+            </HStack>
+          </VStack>
+        </Box>
+
+        <Box bg="gray.50" p={4} borderRadius="md">
+          <Heading size="md" mb={2}>Driver Information</Heading>
+          <VStack align="stretch" spacing={3}>
+            <HStack>
+              <Icon as={PhoneIcon} color={primaryColor} />
+              <Text>{rideWithOffer.offer.driver.name}</Text>
+            </HStack>
+            <HStack>
+              <Icon as={EmailIcon} color={primaryColor} />
+              <Text>{rideWithOffer.offer.driver.email}</Text>
+            </HStack>
+            <HStack>
+              <Icon as={InfoIcon} color={primaryColor} />
+              <Text>{`${rideWithOffer.offer.vehicle.brand} ${rideWithOffer.offer.vehicle.model} (${rideWithOffer.offer.vehicle.year})`}</Text>
+            </HStack>
+          </VStack>
+        </Box>
+
+        <Flex justifyContent="space-between" alignItems="center" bg="gray.50" p={4} borderRadius="md">
+          <Text fontSize="xl" fontWeight="bold">Price:</Text>
+          <Text fontSize="xl" fontWeight="bold" color={primaryColor}>
+            ${rideWithOffer.offer.price.toFixed(2)}
+          </Text>
+        </Flex>
+
         {rideWithOffer.status.toUpperCase() === "ACCEPTED" && (
           <Box
             borderWidth={2}
