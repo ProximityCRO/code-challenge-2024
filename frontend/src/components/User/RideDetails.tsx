@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   VStack,
@@ -8,11 +8,49 @@ import {
   useToast,
   useDisclosure,
   Divider,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
+  Textarea,
 } from "@chakra-ui/react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
+
+interface Driver {
+  id: number;
+  email: string;
+  name: string;
+  phone_number: string;
+}
+
+interface Vehicle {
+  id: number;
+  driver_id: number;
+  brand: string;
+  model: string;
+  year: number;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Offer {
+  id: number;
+  ride_id: number;
+  driver: Driver;
+  vehicle: Vehicle;
+  price: number;
+  selected: boolean;
+}
 
 interface Ride {
   id: number;
@@ -21,46 +59,68 @@ interface Ride {
   pickup_location: string;
   scheduled_time: string;
   pin?: number;
-  offer?: {
+  offer?: Offer;
+  review?: {
     id: number;
-    driver_id: number;
-    price: number;
+    rating: number;
+    comments: string;
   };
 }
 
 const RideDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const rideId = Number(id);
-  const location = useLocation();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [rating, setRating] = useState<number>(0);
+  const [comments, setComments] = useState<string>("");
 
   const {
     isOpen: isReviewOpen,
     onOpen: onReviewOpen,
     onClose: onReviewClose,
   } = useDisclosure();
-  const [rating, setRating] = useState<number>(0);
-  const [comments, setComments] = useState<string>("");
 
-  const navigate = useNavigate();
+  // Obtener los detalles del ride
+  const {
+    data: ride,
+    isLoading: isRideLoading,
+    isError: isRideError,
+  } = useQuery<Ride>({
+    queryKey: ["ride", rideId],
+    queryFn: async () => {
+      const response = await axios.get(
+        `http://localhost:3001/api/v1/ride/${rideId}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      return response.data;
+    },
+    refetchInterval: 5000, // Refrescar cada 5 segundos
+  });
 
-  const queryClient = useQueryClient();
-  let ride = location.state?.ride as Ride | undefined;
+  // Obtener las ofertas del ride
+  const {
+    data: offers,
+    isLoading: isOffersLoading,
+    isError: isOffersError,
+  } = useQuery<Offer[]>({
+    queryKey: ["offers", rideId],
+    queryFn: async () => {
+      const response = await axios.get(
+        `http://localhost:3001/api/v1/offer/?ride_id=${rideId}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      return response.data;
+    },
+  });
 
-  if (!ride) {
-    const rides = queryClient.getQueryData<Ride[]>(["userRides"]);
-    ride = rides?.find((ride) => ride.id === rideId);
-  }
-
-  if (!ride) {
-    useEffect(() => {
-      navigate("/user-dashboard");
-    }, [navigate]);
-    return <Text>Ride not found</Text>;
-  }
-
-  const toast = useToast();
-  const { user } = useAuth();
-
+  // Mutación para completar el ride
   const completeRideMutation = useMutation({
     mutationFn: async () => {
       await axios.patch(
@@ -78,12 +138,8 @@ const RideDetails: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-      queryClient.invalidateQueries({ queryKey: ["userRides"] });
-      queryClient.invalidateQueries({ queryKey: ["ride", rideId] });
-      setRide((prevRide) =>
-        prevRide ? { ...prevRide, status: "COMPLETED" } : prevRide
-      );
-
+      queryClient.invalidateQueries(["ride", rideId]);
+      queryClient.invalidateQueries(["offers", rideId]);
       onReviewOpen();
     },
     onError: () => {
@@ -96,10 +152,7 @@ const RideDetails: React.FC = () => {
     },
   });
 
-  const handleCompleteRide = () => {
-    completeRideMutation.mutate();
-  };
-
+  // Mutación para crear una reseña
   const createReviewMutation = useMutation({
     mutationFn: async (reviewData: {
       driver_id: number;
@@ -127,17 +180,63 @@ const RideDetails: React.FC = () => {
       onReviewClose();
       setRating(0);
       setComments("");
-      queryClient.invalidateQueries(["driverReviews"]);
+      queryClient.invalidateQueries(["ride", rideId]);
     },
-    onError: () => {
-      toast({
-        title: "Error submitting review",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+    onError: (error: any) => {
+      if (error.response && error.response.status === 400) {
+        toast({
+          title: "You have already submitted a review for this ride",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Error submitting review",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     },
   });
+
+  // Manejo de estados de carga y error
+  if (isRideLoading || isOffersLoading) {
+    return <Text>Loading ride details...</Text>;
+  }
+
+  if (isRideError || !ride || isOffersError || !offers) {
+    toast({
+      title: "Error loading ride details.",
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+    });
+    navigate("/user-dashboard");
+    return null;
+  }
+
+  // Encontrar la oferta seleccionada
+  const selectedOffer = offers.find((offer) => offer.selected);
+
+  if (!selectedOffer) {
+    toast({
+      title: "No selected offer found for this ride.",
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+    });
+    navigate("/user-dashboard");
+    return null;
+  }
+
+  // Crear un nuevo objeto ride que incluya la oferta seleccionada
+  const rideWithOffer = { ...ride, offer: selectedOffer };
+
+  const handleCompleteRide = () => {
+    completeRideMutation.mutate();
+  };
 
   const handleSubmitReview = () => {
     if (!rating) {
@@ -150,7 +249,7 @@ const RideDetails: React.FC = () => {
       return;
     }
 
-    const driverId = ride?.offer?.driver_id;
+    const driverId = rideWithOffer.offer.driver.id;
 
     if (!driverId) {
       toast({
@@ -187,35 +286,36 @@ const RideDetails: React.FC = () => {
         </Heading>
         <Divider />
         <Text>
-          <strong>From:</strong> {ride.pickup_location}
+          <strong>From:</strong> {rideWithOffer.pickup_location}
         </Text>
         <Text>
-          <strong>To:</strong> {ride.destination_location}
+          <strong>To:</strong> {rideWithOffer.destination_location}
         </Text>
         <Text>
           <strong>Date:</strong>{" "}
-          {new Date(ride.scheduled_time).toLocaleString()}
+          {new Date(rideWithOffer.scheduled_time).toLocaleString()}
         </Text>
         <Text>
-          <strong>Status:</strong> {ride.status}
+          <strong>Status:</strong> {rideWithOffer.status}
         </Text>
-        {ride.offer && (
-          <Text>
-            <strong>Price:</strong> ${ride.offer.price.toFixed(2)}
-          </Text>
-        )}
+        <Text>
+          <strong>Driver:</strong> {rideWithOffer.offer.driver.name}
+        </Text>
+        <Text>
+          <strong>Price:</strong> ${rideWithOffer.offer.price.toFixed(2)}
+        </Text>
         <Divider />
-        {ride.status.toUpperCase() === "ACCEPTED" && (
+        {rideWithOffer.status.toUpperCase() === "ACCEPTED" && (
           <>
             <Text fontWeight="bold" fontSize="2xl" textAlign="center">
-              PIN: {ride.pin}
+              PIN: {rideWithOffer.pin}
             </Text>
             <Text textAlign="center">
               Provide this PIN to the driver to start the ride.
             </Text>
           </>
         )}
-        {ride.status.toUpperCase() === "STARTED" && (
+        {rideWithOffer.status.toUpperCase() === "STARTED" && (
           <>
             <Text textAlign="center">Your ride is in progress.</Text>
             <Button
@@ -227,10 +327,10 @@ const RideDetails: React.FC = () => {
             </Button>
           </>
         )}
-        {ride.status.toUpperCase() === "COMPLETED" && (
+        {rideWithOffer.status.toUpperCase() === "COMPLETED" && (
           <>
             <Text textAlign="center">The ride has been completed.</Text>
-            {ride.review ? (
+            {rideWithOffer.review ? (
               <Text fontSize="sm" color="green.500" textAlign="center">
                 Review Submitted
               </Text>
@@ -242,6 +342,48 @@ const RideDetails: React.FC = () => {
           </>
         )}
       </VStack>
+
+      {/* Review Modal */}
+      <Modal isOpen={isReviewOpen} onClose={onReviewClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Leave a Review</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl isRequired>
+              <FormLabel>Rating</FormLabel>
+              <Input
+                type="number"
+                max={5}
+                min={1}
+                value={rating}
+                onChange={(e) => setRating(Number(e.target.value))}
+              />
+            </FormControl>
+            <FormControl mt={4}>
+              <FormLabel>Comments</FormLabel>
+              <Textarea
+                placeholder="Write your comments"
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              colorScheme="blue"
+              mr={3}
+              onClick={handleSubmitReview}
+              isLoading={createReviewMutation.isLoading}
+            >
+              Submit
+            </Button>
+            <Button variant="ghost" onClick={onReviewClose}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
