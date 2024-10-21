@@ -20,7 +20,7 @@ import {
   FormControl,
   FormLabel,
   useToast,
-  Input,
+  Icon,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -29,6 +29,7 @@ import { Link } from "react-router-dom";
 import NewRideRequest from "./NewRideRequest";
 import OffersModal from "../components/User/OffersModal";
 import { useNavigate } from "react-router-dom";
+import { StarIcon } from "@chakra-ui/icons";
 
 interface Ride {
   id: number;
@@ -117,7 +118,7 @@ const UserDashboard: React.FC = () => {
       case "REQUESTED":
         return (
           <VStack>
-            <Button colorScheme="blue" onClick={() => handleOffers(ride.id)}>
+            <Button bg={primaryColor} _hover={{ bg: "#15339E" }} color="white" onClick={() => handleOffers(ride.id)}>
               Offers
             </Button>
             <Button colorScheme="red" onClick={() => handleDeleteRide(ride.id)}>
@@ -272,10 +273,29 @@ const UserDashboard: React.FC = () => {
       comments,
     });
   };
-  
 
   const handleDeleteRide = (rideId: number) => {
     deleteRideMutation.mutate(rideId);
+  };
+
+  const primaryColor = "#1F41BB";
+
+  const StarRating = ({ rating, setRating }) => {
+    return (
+      <HStack spacing={2}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Icon
+            key={i}
+            as={StarIcon}
+            color={i <= rating ? "yellow.400" : "gray.300"}
+            w={8}
+            h={8}
+            cursor="pointer"
+            onClick={() => setRating(i)}
+          />
+        ))}
+      </HStack>
+    );
   };
 
   return (
@@ -294,10 +314,12 @@ const UserDashboard: React.FC = () => {
 
       {/* New Request Button */}
       <Button
-        colorScheme="blue"
+        bg={primaryColor}
+        color="white"
         size="lg"
         width="100%"
         mb={8}
+        _hover={{ bg: "#15339E" }}
         onClick={onNewRequestOpen}
       >
         New Request
@@ -321,13 +343,7 @@ const UserDashboard: React.FC = () => {
           <ModalBody>
             <FormControl isRequired>
               <FormLabel>Rating</FormLabel>
-              <Input
-                type="number"
-                max={5}
-                min={1}
-                value={rating}
-                onChange={(e) => setRating(Number(e.target.value))}
-              />
+              <StarRating rating={rating} setRating={setRating} />
             </FormControl>
             <FormControl mt={4}>
               <FormLabel>Comments</FormLabel>
@@ -339,7 +355,13 @@ const UserDashboard: React.FC = () => {
             </FormControl>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={handleSubmitReview}>
+            <Button
+              bg={primaryColor}
+              color="white"
+              mr={3}
+              onClick={handleSubmitReview}
+              _hover={{ bg: "#15339E" }}
+            >
               Submit
             </Button>
             <Button variant="ghost" onClick={onReviewClose}>
@@ -387,11 +409,6 @@ const UserDashboard: React.FC = () => {
                   <Text fontSize="sm" color="gray.500">
                     Status: {ride.status}
                   </Text>
-                  {ride.offer && (
-                    <Text fontSize="sm">
-                      Price: ${ride.offer.price.toFixed(2)}
-                    </Text>
-                  )}
                 </VStack>
                 <Box>{renderRideButton(ride)}</Box>
               </Flex>

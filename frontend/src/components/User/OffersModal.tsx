@@ -140,7 +140,6 @@ const OffersModal: React.FC<OffersModalProps> = ({
 
   const handleDecline = (offerId: number) => {
     // For simplicity, we'll just remove the offer from the list
-    // In a real app, you might want to send this information to the backend
     queryClient.setQueryData<Offer[]>(["offers", rideId], (oldData) => 
       oldData ? oldData.filter(offer => offer.id !== offerId) : []
     );
@@ -149,6 +148,8 @@ const OffersModal: React.FC<OffersModalProps> = ({
   const handleCancelRide = () => {
     cancelRideMutation.mutate(rideId);
   };
+
+  const primaryColor = "#1F41BB";
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md">
@@ -206,7 +207,7 @@ const OffersModal: React.FC<OffersModalProps> = ({
           <Button colorScheme="red" mr={3} onClick={handleCancelRide}>
             Cancel Ride
           </Button>
-          <Button colorScheme="blue" onClick={onClose}>
+          <Button bg={primaryColor} _hover={{ bg: "#15339E" }} color="white" onClick={onClose}>
             Close
           </Button>
         </ModalFooter>

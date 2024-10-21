@@ -214,6 +214,8 @@ const DriverDashboard: React.FC = () => {
     logout();
   };
 
+  const primaryColor = "#1F41BB";
+
   return (
     <Box maxWidth="600px" margin="auto" mt={8} p={4}>
       <Flex justifyContent="space-between" mb={8}>
@@ -268,7 +270,9 @@ const DriverDashboard: React.FC = () => {
                       width="100px"
                     />
                     <Button
-                      colorScheme="blue"
+                      bg={primaryColor}
+                      _hover={{ bg: "#15339E" }}
+                      color="white"
                       onClick={() => handleSendOffer(ride.id)}
                     >
                       Send Offer

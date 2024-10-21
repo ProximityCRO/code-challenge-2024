@@ -17,13 +17,16 @@ import {
   ModalCloseButton,
   FormControl,
   FormLabel,
-  Input,
   Textarea,
+  Progress,
+  HStack,
+  Icon,
 } from "@chakra-ui/react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
+import { StarIcon } from "@chakra-ui/icons";
 
 interface Driver {
   id: number;
@@ -76,6 +79,8 @@ const RideDetails: React.FC = () => {
   const queryClient = useQueryClient();
   const [rating, setRating] = useState<number>(0);
   const [comments, setComments] = useState<string>("");
+
+  const primaryColor = "#1F41BB";
 
   const {
     isOpen: isReviewOpen,
@@ -270,6 +275,24 @@ const RideDetails: React.FC = () => {
     });
   };
 
+  const StarRating = ({ rating, setRating }) => {
+    return (
+      <HStack spacing={2}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Icon
+            key={i}
+            as={StarIcon}
+            color={i <= rating ? "yellow.400" : "gray.300"}
+            w={8}
+            h={8}
+            cursor="pointer"
+            onClick={() => setRating(i)}
+          />
+        ))}
+      </HStack>
+    );
+  };
+
   return (
     <Box
       maxWidth="600px"
@@ -278,68 +301,98 @@ const RideDetails: React.FC = () => {
       p={6}
       borderWidth={1}
       borderRadius="md"
-      boxShadow="md"
+      boxShadow="lg"
+      bg="white"
     >
-      <VStack spacing={4} align="stretch">
-        <Heading as="h2" size="lg" textAlign="center">
+      <VStack spacing={6} align="stretch">
+        <Heading as="h2" size="xl" textAlign="center" color={primaryColor}>
           Ride Details
         </Heading>
         <Divider />
-        <Text>
+        <Text fontSize="lg">
           <strong>From:</strong> {rideWithOffer.pickup_location}
         </Text>
-        <Text>
+        <Text fontSize="lg">
           <strong>To:</strong> {rideWithOffer.destination_location}
         </Text>
-        <Text>
+        <Text fontSize="lg">
           <strong>Date:</strong>{" "}
           {new Date(rideWithOffer.scheduled_time).toLocaleString()}
         </Text>
-        <Text>
-          <strong>Status:</strong> {rideWithOffer.status}
+        <Text fontSize="lg">
+          <strong>Status:</strong>{" "}
+          <Text as="span" fontWeight="bold" color={primaryColor}>
+            {rideWithOffer.status}
+          </Text>
         </Text>
-        <Text>
+        <Text fontSize="lg">
           <strong>Driver:</strong> {rideWithOffer.offer.driver.name}
         </Text>
-        <Text>
+        <Text fontSize="lg">
           <strong>Price:</strong> ${rideWithOffer.offer.price.toFixed(2)}
         </Text>
         <Divider />
         {rideWithOffer.status.toUpperCase() === "ACCEPTED" && (
-          <>
-            <Text fontWeight="bold" fontSize="2xl" textAlign="center">
+          <Box
+            borderWidth={2}
+            borderColor={primaryColor}
+            borderRadius="md"
+            p={4}
+            textAlign="center"
+          >
+            <Text fontWeight="bold" fontSize="3xl" color={primaryColor}>
               PIN: {rideWithOffer.pin}
             </Text>
-            <Text textAlign="center">
+            <Text fontSize="md">
               Provide this PIN to the driver to start the ride.
             </Text>
-          </>
+          </Box>
         )}
         {rideWithOffer.status.toUpperCase() === "STARTED" && (
-          <>
-            <Text textAlign="center">Your ride is in progress.</Text>
+          <Box>
+            <Text textAlign="center" fontSize="xl" fontWeight="bold" mb={4}>
+              Your ride is in progress
+            </Text>
+            <Progress
+              value={75}
+              size="lg"
+              colorScheme="blue"
+              isAnimated
+              hasStripe
+              mb={4}
+            />
             <Button
-              colorScheme="orange"
+              colorScheme="blue"
               onClick={handleCompleteRide}
               isLoading={completeRideMutation.isLoading}
+              width="100%"
+              size="lg"
             >
               Complete Ride
             </Button>
-          </>
+          </Box>
         )}
         {rideWithOffer.status.toUpperCase() === "COMPLETED" && (
-          <>
-            <Text textAlign="center">The ride has been completed.</Text>
+          <Box textAlign="center">
+            <Text fontSize="xl" fontWeight="bold" mb={4}>
+              The ride has been completed.
+            </Text>
             {rideWithOffer.review ? (
-              <Text fontSize="sm" color="green.500" textAlign="center">
+              <Text fontSize="md" color="green.500">
                 Review Submitted
               </Text>
             ) : (
-              <Button colorScheme="purple" onClick={onReviewOpen}>
+              <Button
+                colorScheme="blue"
+                onClick={onReviewOpen}
+                size="lg"
+                bg={primaryColor}
+                _hover={{ bg: "#1A3697" }}
+              >
                 Leave a Review
               </Button>
             )}
-          </>
+          </Box>
         )}
       </VStack>
 
@@ -352,13 +405,7 @@ const RideDetails: React.FC = () => {
           <ModalBody>
             <FormControl isRequired>
               <FormLabel>Rating</FormLabel>
-              <Input
-                type="number"
-                max={5}
-                min={1}
-                value={rating}
-                onChange={(e) => setRating(Number(e.target.value))}
-              />
+              <StarRating rating={rating} setRating={setRating} />
             </FormControl>
             <FormControl mt={4}>
               <FormLabel>Comments</FormLabel>
@@ -371,10 +418,12 @@ const RideDetails: React.FC = () => {
           </ModalBody>
           <ModalFooter>
             <Button
-              colorScheme="blue"
+              bg={primaryColor}
+              color="white"
               mr={3}
               onClick={handleSubmitReview}
               isLoading={createReviewMutation.isLoading}
+              _hover={{ bg: "#1A3697" }}
             >
               Submit
             </Button>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Box,
   VStack,
   Heading,
   Input,
@@ -8,6 +7,8 @@ import {
   useToast,
   FormControl,
   FormLabel,
+  ModalBody,
+  ModalFooter,
 } from '@chakra-ui/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
@@ -27,6 +28,8 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
+
+  const primaryColor = "#1F41BB";
 
   const createRideMutation = useMutation({
     mutationFn: async (newRide: RideRequest) => {
@@ -69,50 +72,58 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <Box as="form" onSubmit={handleSubmit} width="100%" maxWidth="400px" margin="auto">
-      <VStack spacing={4} align="stretch">
-        <Heading size="lg" textAlign="center">Request a Ride</Heading>
-        <FormControl isRequired>
-          <FormLabel>Pickup Location</FormLabel>
-          <Input
-            placeholder="Pickup Location"
-            value={pickup}
-            onChange={(e) => setPickup(e.target.value)}
-          />
-        </FormControl>
-        <FormControl isRequired>
-          <FormLabel>Destination</FormLabel>
-          <Input
-            placeholder="Destination"
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-          />
-        </FormControl>
-        <FormControl isRequired>
-          <FormLabel>Date</FormLabel>
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </FormControl>
-        <FormControl isRequired>
-          <FormLabel>Time</FormLabel>
-          <Input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-          />
-        </FormControl>
+    <form onSubmit={handleSubmit}>
+      <ModalBody>
+        <VStack spacing={4} align="stretch">
+          <Heading size="md" textAlign="center">Request a Ride</Heading>
+          <FormControl isRequired>
+            <FormLabel>Pickup Location</FormLabel>
+            <Input
+              placeholder="Enter pickup location"
+              value={pickup}
+              onChange={(e) => setPickup(e.target.value)}
+            />
+          </FormControl>
+          <FormControl isRequired>
+            <FormLabel>Destination</FormLabel>
+            <Input
+              placeholder="Enter destination"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+            />
+          </FormControl>
+          <FormControl isRequired>
+            <FormLabel>Date</FormLabel>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </FormControl>
+          <FormControl isRequired>
+            <FormLabel>Time</FormLabel>
+            <Input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+            />
+          </FormControl>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
         <Button
           type="submit"
-          colorScheme="blue"
+          bg={primaryColor}
+          _hover={{ bg: "#15339E" }}
+          color="white"
           isLoading={createRideMutation.isLoading}
+          mr={3}
         >
-          Send
+          Send Request
         </Button>
-      </VStack>
-    </Box>
+        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+      </ModalFooter>
+    </form>
   );
 };
 
