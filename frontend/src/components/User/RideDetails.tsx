@@ -18,6 +18,7 @@ import {
   FormControl,
   FormLabel,
   Textarea,
+  Divider,
 } from "@chakra-ui/react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -49,7 +50,7 @@ const RideDetails: React.FC = () => {
     onClose: onReviewClose,
   } = useDisclosure();
   const [rating, setRating] = useState<number>(0);
-  const [comments, setComments] = useState<string>('');
+  const [comments, setComments] = useState<string>("");
 
   const navigate = useNavigate();
 
@@ -119,56 +120,60 @@ const RideDetails: React.FC = () => {
       rating: number;
       comments: string;
     }) => {
-      const response = await axios.post('http://localhost:3001/api/v1/review', reviewData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      const response = await axios.post(
+        "http://localhost:3001/api/v1/review",
+        reviewData,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
       return response.data;
     },
     onSuccess: () => {
       toast({
-        title: 'Review submitted successfully',
-        status: 'success',
+        title: "Review submitted successfully",
+        status: "success",
         duration: 3000,
         isClosable: true,
       });
       onReviewClose();
       setRating(0);
-      setComments('');
-      queryClient.invalidateQueries(['driverReviews']);
+      setComments("");
+      queryClient.invalidateQueries(["driverReviews"]);
     },
     onError: () => {
       toast({
-        title: 'Error submitting review',
-        status: 'error',
+        title: "Error submitting review",
+        status: "error",
         duration: 3000,
         isClosable: true,
       });
     },
   });
-  
+
   const handleSubmitReview = () => {
     if (!rating) {
       toast({
-        title: 'Please provide a rating',
-        status: 'warning',
+        title: "Please provide a rating",
+        status: "warning",
         duration: 3000,
         isClosable: true,
       });
       return;
     }
-  
+
     const driverId = ride?.offer?.driver_id;
-  
+
     if (!driverId) {
       toast({
-        title: 'Driver not found',
-        status: 'error',
+        title: "Driver not found",
+        status: "error",
         duration: 3000,
         isClosable: true,
       });
       return;
     }
-  
+
     createReviewMutation.mutate({
       driver_id: driverId,
       user_id: user!.id,
@@ -177,14 +182,22 @@ const RideDetails: React.FC = () => {
       comments,
     });
   };
-  
 
   return (
-    <Box maxWidth="600px" margin="auto" mt={8} p={4}>
+    <Box
+      maxWidth="600px"
+      margin="auto"
+      mt={8}
+      p={6}
+      borderWidth={1}
+      borderRadius="md"
+      boxShadow="md"
+    >
       <VStack spacing={4} align="stretch">
-        <Heading as="h2" size="lg">
+        <Heading as="h2" size="lg" textAlign="center">
           Ride Details
         </Heading>
+        <Divider />
         <Text>
           <strong>From:</strong> {ride.pickup_location}
         </Text>
@@ -198,17 +211,25 @@ const RideDetails: React.FC = () => {
         <Text>
           <strong>Status:</strong> {ride.status}
         </Text>
+        {ride.offer && (
+          <Text>
+            <strong>Price:</strong> ${ride.offer.price.toFixed(2)}
+          </Text>
+        )}
+        <Divider />
         {ride.status.toUpperCase() === "ACCEPTED" && (
           <>
-            <Text fontWeight="bold" fontSize="2xl">
+            <Text fontWeight="bold" fontSize="2xl" textAlign="center">
               PIN: {ride.pin}
             </Text>
-            <Text>Waiting for driver to validate PIN...</Text>
+            <Text textAlign="center">
+              Provide this PIN to the driver to start the ride.
+            </Text>
           </>
         )}
         {ride.status.toUpperCase() === "STARTED" && (
           <>
-            <Text>Ride has started.</Text>
+            <Text textAlign="center">Your ride is in progress.</Text>
             <Button
               colorScheme="orange"
               onClick={handleCompleteRide}
@@ -220,50 +241,19 @@ const RideDetails: React.FC = () => {
         )}
         {ride.status.toUpperCase() === "COMPLETED" && (
           <>
-            <Text>The ride has been completed.</Text>
-            <Button colorScheme="purple" onClick={handleSubmitReview}>
-              Review
-            </Button>
+            <Text textAlign="center">The ride has been completed.</Text>
+            {ride.review ? (
+              <Text fontSize="sm" color="green.500" textAlign="center">
+                Review Submitted
+              </Text>
+            ) : (
+              <Button colorScheme="purple" onClick={onReviewOpen}>
+                Leave a Review
+              </Button>
+            )}
           </>
         )}
       </VStack>
-
-      <Modal isOpen={isReviewOpen} onClose={onReviewClose}>
-  <ModalOverlay />
-  <ModalContent>
-    <ModalHeader>Leave a Review</ModalHeader>
-    <ModalCloseButton />
-    <ModalBody>
-      <FormControl isRequired>
-        <FormLabel>Rating</FormLabel>
-        <Input
-          type="number"
-          max={5}
-          min={1}
-          value={rating}
-          onChange={(e) => setRating(Number(e.target.value))}
-        />
-      </FormControl>
-      <FormControl mt={4}>
-        <FormLabel>Comments</FormLabel>
-        <Textarea
-          placeholder="Write your comments"
-          value={comments}
-          onChange={(e) => setComments(e.target.value)}
-        />
-      </FormControl>
-    </ModalBody>
-    <ModalFooter>
-      <Button colorScheme="blue" mr={3} onClick={handleSubmitReview} isLoading={createReviewMutation.isLoading}>
-        Submit
-      </Button>
-      <Button variant="ghost" onClick={onReviewClose}>
-        Cancel
-      </Button>
-    </ModalFooter>
-  </ModalContent>
-</Modal>
-
     </Box>
   );
 };

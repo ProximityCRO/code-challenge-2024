@@ -286,7 +286,7 @@ const UserDashboard: React.FC = () => {
           My Rides
         </Heading>
         <HStack spacing={4}>
-          <Link to="/history">History</Link>
+          <Link to="/ride-history">History</Link>
           <Link to="/profile">Profile</Link>
           <Button onClick={handleLogout}>Logout</Button>
         </HStack>
@@ -365,7 +365,7 @@ const UserDashboard: React.FC = () => {
         <Text>Error loading rides</Text>
       ) : (
         <VStack spacing={4} align="stretch">
-          {rides?.map((ride) => (
+          {rides?.filter(ride => ride.status.toUpperCase() !== 'COMPLETED').map((ride) => (
             <Box
               key={ride.id}
               p={4}

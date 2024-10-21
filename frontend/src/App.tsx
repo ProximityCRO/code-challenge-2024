@@ -16,6 +16,8 @@ import UserDashboard from "./pages/UserDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
 import VehicleRegistrationForm from "./components/Driver/VehicleRegistrationForm";
 import RideDetails from "./components/User/RideDetails";
+import RideHistory from "./components/User/RideHistory";
+import DriverHistory from "./components/Driver/DriverHistory";
 import "./App.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { QueryClient } from "@tanstack/react-query";
@@ -59,6 +61,14 @@ const App: React.FC = () => {
               <Route
                 path="/ride/:id"
                 element={<ProtectedRoute element={<RideDetails />} role="user" />}
+              />
+              <Route
+                path="/ride-history"
+                element={<ProtectedRoute element={<RideHistory />} role="user" />}
+              />
+              <Route
+                path="/driver-history"
+                element={<ProtectedRoute element={<DriverHistory />} role="driver" />}
               />
             </Routes>
           </AuthProvider>
