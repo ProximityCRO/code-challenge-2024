@@ -495,16 +495,17 @@ const UserDashboard: React.FC = () => {
                       {new Date(ride.scheduled_time).toLocaleTimeString()}
                     </Text>
                   </HStack>
-                  {ride.offer && (
-                    <HStack>
-                      <Text fontWeight="bold" color={primaryColor}>
-                        $
-                      </Text>
-                      <Text fontWeight="bold">
-                        {ride.offer.price.toFixed(2)}
-                      </Text>
-                    </HStack>
-                  )}
+                  {ride.offer &&
+                    ride.status.toUpperCase() !== "REQUESTED" && (
+                      <HStack>
+                        <Text fontWeight="bold" color={primaryColor}>
+                          $
+                        </Text>
+                        <Text fontWeight="bold">
+                          {ride.offer.price.toFixed(2)}
+                        </Text>
+                      </HStack>
+                    )}
                 </VStack>
 
                 <Box>{renderRideButton(ride)}</Box>
