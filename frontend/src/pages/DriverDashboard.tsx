@@ -18,7 +18,16 @@ import {
   ModalBody,
   ModalCloseButton,
   useDisclosure,
+  Icon,
+  Badge,
+  Stack,
 } from "@chakra-ui/react";
+import {
+  StarIcon,
+  ChevronLeftIcon,
+  CalendarIcon,
+  TimeIcon,
+} from "@chakra-ui/icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -44,8 +53,27 @@ interface Ride {
     name: string;
   };
   scheduled_time: string;
+  offer?: {
+    price: number;
+  };
   review?: Review;
 }
+
+// Utility function to get status color
+const getStatusColor = (status: string) => {
+  switch (status.toUpperCase()) {
+    case "REQUESTED":
+      return "yellow";
+    case "ACCEPTED":
+      return "green";
+    case "STARTED":
+      return "blue";
+    case "COMPLETED":
+      return "purple";
+    default:
+      return "gray";
+  }
+};
 
 const DriverDashboard: React.FC = () => {
   // Context hook
@@ -234,23 +262,85 @@ const DriverDashboard: React.FC = () => {
   // Constants
   const primaryColor = "#1F41BB";
 
+  // Function to render action buttons based on ride status
+  const renderRideButton = (ride: Ride) => {
+    switch (ride.status.toUpperCase()) {
+      case "REQUESTED":
+        return (
+          <HStack mt={2}>
+            <Input
+              placeholder="Price"
+              value={offerPrices[ride.id] || ""}
+              onChange={(e) =>
+                setOfferPrices({
+                  ...offerPrices,
+                  [ride.id]: e.target.value,
+                })
+              }
+              width="100px"
+            />
+            <Button
+              bg={primaryColor}
+              _hover={{ bg: "#15339E" }}
+              color="white"
+              onClick={() => handleSendOffer(ride.id)}
+            >
+              Send Offer
+            </Button>
+          </HStack>
+        );
+      case "ACCEPTED":
+        return (
+          <Button
+            colorScheme="green"
+            onClick={() => handlePinValidation(ride.id)}
+          >
+            Validate PIN
+          </Button>
+        );
+      case "STARTED":
+        return (
+          <Text fontWeight="bold" color="blue.500">
+            Ride in progress
+          </Text>
+        );
+      case "COMPLETED":
+        return (
+          <>
+            <Text fontWeight="bold" color="blue.500">
+              Ride Completed
+            </Text>
+            {ride.review && (
+              <Button
+                colorScheme="teal"
+                onClick={() => handleViewReview(ride.review)}
+              >
+                View Review
+              </Button>
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Box maxWidth="600px" margin="auto" mt={8} p={4}>
       {/* Navigation Menu */}
-      <Flex justifyContent="space-between" mb={8}>
-        <Heading as="h1" size="xl">
-          Driver Dashboard
+      <Flex justifyContent="space-between" alignItems="center" mb={6}>
+        <Heading as="h1" size="xl" color={primaryColor}>
+          My Rides
         </Heading>
         <HStack spacing={4}>
           <Link to="/offers">Offers</Link>
           <Link to="/driver-history">History</Link>
           <Link to="/profile">Profile</Link>
+          <Button onClick={handleLogout} variant="outline" colorScheme="red">
+            Logout
+          </Button>
         </HStack>
       </Flex>
-
-      <Heading as="h2" size="lg" mb={4}>
-        Available Rides
-      </Heading>
 
       {/* Rides List */}
       {isLoading ? (
@@ -258,75 +348,80 @@ const DriverDashboard: React.FC = () => {
       ) : isError ? (
         <Text>Error loading rides</Text>
       ) : (
-        <VStack spacing={4} align="stretch">
+        <VStack spacing={6} align="stretch">
           {rides
             ?.filter((ride) => ride.status.toUpperCase() !== "COMPLETED")
             .map((ride) => (
               <Box
                 key={ride.id}
-                p={4}
+                p={6}
                 borderWidth={1}
-                borderRadius="md"
+                borderRadius="lg"
                 borderColor={borderColor}
                 bg={bgColor}
+                boxShadow="md"
+                transition="all 0.3s"
+                _hover={{ transform: "translateY(-5px)", boxShadow: "lg" }}
               >
-                <VStack align="start" spacing={1}>
-                  <Text fontWeight="bold">From: {ride.pickup_location}</Text>
-                  <Text>To: {ride.destination_location}</Text>
-                  <Text>User: {ride.user.name}</Text>
-                  <Text>
-                    Date: {new Date(ride.scheduled_time).toLocaleString()}
+                <Flex justifyContent="space-between" alignItems="center" mb={4}>
+                  <Badge
+                    colorScheme={getStatusColor(ride.status)}
+                    fontSize="0.8em"
+                    p={2}
+                    borderRadius="full"
+                  >
+                    {ride.status}
+                  </Badge>
+                  <Text fontWeight="bold" fontSize="lg">
+                    Ride #{ride.id.toString().padStart(4, "0")}
                   </Text>
-                  <Text>Status: {ride.status}</Text>
-                  {ride.status.toUpperCase() === "REQUESTED" ? (
-                    <HStack mt={2}>
-                      <Input
-                        placeholder="Price"
-                        value={offerPrices[ride.id] || ""}
-                        onChange={(e) =>
-                          setOfferPrices({
-                            ...offerPrices,
-                            [ride.id]: e.target.value,
-                          })
-                        }
-                        width="100px"
-                      />
-                      <Button
-                        bg={primaryColor}
-                        _hover={{ bg: "#15339E" }}
-                        color="white"
-                        onClick={() => handleSendOffer(ride.id)}
-                      >
-                        Send Offer
-                      </Button>
-                    </HStack>
-                  ) : ride.status.toUpperCase() === "ACCEPTED" ? (
-                    <Button
-                      colorScheme="green"
-                      onClick={() => handlePinValidation(ride.id)}
-                    >
-                      Validate PIN
-                    </Button>
-                  ) : ride.status.toUpperCase() === "STARTED" ? (
-                    <Text fontWeight="bold" color="blue.500">
-                      Ride in progress
+                </Flex>
+
+                <VStack align="stretch" spacing={3} mb={4}>
+                  <HStack>
+                    <Icon as={ChevronLeftIcon} color={primaryColor} />
+                    <Text fontWeight="medium">
+                      From: {ride.pickup_location}
                     </Text>
-                  ) : ride.status.toUpperCase() === "COMPLETED" ? (
-                    <>
-                      <Text fontWeight="bold" color="blue.500">
-                        Ride Completed
+                  </HStack>
+                  <HStack>
+                    <Icon
+                      as={ChevronLeftIcon}
+                      transform="rotate(180deg)"
+                      color={primaryColor}
+                    />
+                    <Text fontWeight="medium">
+                      To: {ride.destination_location}
+                    </Text>
+                  </HStack>
+                  <HStack>
+                    <Icon as={CalendarIcon} color={primaryColor} />
+                    <Text>
+                      {new Date(ride.scheduled_time).toLocaleDateString()}
+                    </Text>
+                  </HStack>
+                  <HStack>
+                    <Icon as={TimeIcon} color={primaryColor} />
+                    <Text>
+                      {new Date(ride.scheduled_time).toLocaleTimeString()}
+                    </Text>
+                  </HStack>
+                  <HStack>
+                    <Text fontWeight="medium">User: {ride.user.name}</Text>
+                  </HStack>
+                  {ride.offer && ride.offer.price && (
+                    <HStack>
+                      <Text fontWeight="bold" color={primaryColor}>
+                        $
                       </Text>
-                      {ride.review && (
-                        <Button
-                          colorScheme="teal"
-                          onClick={() => handleViewReview(ride.review)}
-                        >
-                          View Review
-                        </Button>
-                      )}
-                    </>
-                  ) : null}
+                      <Text fontWeight="bold">
+                        {ride.offer.price.toFixed(2)}
+                      </Text>
+                    </HStack>
+                  )}
                 </VStack>
+
+                <Box>{renderRideButton(ride)}</Box>
               </Box>
             ))}
         </VStack>

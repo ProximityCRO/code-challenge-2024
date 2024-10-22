@@ -17,7 +17,6 @@ import {
 } from "@chakra-ui/react";
 import { AiFillRobot } from "react-icons/ai";
 import { FaMapMarkerAlt } from "react-icons/fa";
-import { CloseIcon } from "@chakra-ui/icons";
 
 interface Place {
   place: string;
