@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { UserActiveInterface } from "../common/interfaces/user-active.interface";
@@ -25,12 +25,30 @@ export class ReviewsService {
     const user = await this.userRepository.findOneBy({
       id: createReviewDto.user_id,
     });
+    if (!user) {
+      throw new BadRequestException("User is not valid.");
+    }
     const driver = await this.userRepository.findOneBy({
       id: createReviewDto.driver_id,
     });
+    if (!driver) {
+      throw new BadRequestException("Driver is not valid.");
+    }
     const ride = await this.rideRepository.findOneBy({
       id: createReviewDto.ride_id,
     });
+    if (!ride) {
+      throw new BadRequestException("Ride is not valid.");
+    }
+
+    const reviewExist = await this.reviewRepository.findOneBy({
+      ride: ride,
+      driver: driver,
+      user: user,
+    });
+    if (reviewExist) {
+      throw new BadRequestException("Review was created previously.");
+    }
 
     let review = await this.reviewRepository.save({
       ...createReviewDto,
