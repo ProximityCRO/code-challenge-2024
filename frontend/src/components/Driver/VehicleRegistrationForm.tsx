@@ -140,10 +140,6 @@ const VehicleRegistrationForm: React.FC = () => {
           </Button>
         </VStack>
       </form>
-      <Text mt={4} fontSize="sm" color="gray.600">
-        Note: You can edit your vehicle information later in your profile
-        settings.
-      </Text>
     </Box>
   );
 };

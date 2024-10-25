@@ -50,6 +50,7 @@ const OffersModal: React.FC<OffersModalProps> = ({
 }) => {
   // State variables
   const [sortBy, setSortBy] = useState<"price" | "rating">("price");
+  const [declinedOffers, setDeclinedOffers] = useState<number[]>([]);
 
   // Hooks
   const toast = useToast();
@@ -69,7 +70,8 @@ const OffersModal: React.FC<OffersModalProps> = ({
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-      return response.data;
+      // Filter out declined offers
+      return response.data.filter((offer: Offer) => !declinedOffers.includes(offer.id));
     },
     refetchInterval: 5000,
   });
@@ -156,7 +158,7 @@ const OffersModal: React.FC<OffersModalProps> = ({
   };
 
   const handleDecline = (offerId: number) => {
-    // For simplicity, remove the offer from the list without notifying the server
+    setDeclinedOffers((prev) => [...prev, offerId]);
     queryClient.setQueryData<Offer[]>(["offers", rideId], (oldData) =>
       oldData ? oldData.filter((offer) => offer.id !== offerId) : []
     );
@@ -196,10 +198,6 @@ const OffersModal: React.FC<OffersModalProps> = ({
                 <Box key={offer.id} p={4} borderWidth={1} borderRadius="md">
                   <Text>Driver: {offer.driver.name}</Text>
                   <Text>Price: ${offer.price.toFixed(2)}</Text>
-                  <Text>
-                    Rating: {offer.driver.rating} (
-                    <Link href="#">Go to Reviews</Link>)
-                  </Text>
                   <Text>
                     Vehicle: {offer.vehicle.brand} {offer.vehicle.model}
                   </Text>

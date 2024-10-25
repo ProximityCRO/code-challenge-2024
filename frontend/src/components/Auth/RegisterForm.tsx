@@ -11,6 +11,7 @@ import {
   Alert,
   AlertIcon,
   Select,
+  useToast
 } from "@chakra-ui/react";
 
 const RegisterForm: React.FC = () => {
@@ -23,6 +24,7 @@ const RegisterForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +33,12 @@ const RegisterForm: React.FC = () => {
     try {
       await register(name, email, password, phoneNumber, role);
       navigate("/login");
+      toast({
+        title: "Account created successfully",
+        description: "Please login to continue",
+        status: "success",
+        duration: 3000,
+      });
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);

@@ -1,5 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
   Box,
   VStack,
   HStack,
@@ -20,7 +24,6 @@ import {
   useDisclosure,
   Icon,
   Badge,
-  Stack,
 } from "@chakra-ui/react";
 import {
   StarIcon,
@@ -55,8 +58,16 @@ interface Ride {
   scheduled_time: string;
   offer?: {
     price: number;
+    driver_id: number;
   };
   review?: Review;
+}
+
+interface Offer {
+  driver: {
+    id: number;
+  };
+  price: number;
 }
 
 // Utility function to get status color
@@ -81,6 +92,9 @@ const DriverDashboard: React.FC = () => {
 
   // State variables
   const [offerPrices, setOfferPrices] = useState<{ [key: number]: string }>({});
+  const [driverOffers, setDriverOffers] = useState<{ [key: number]: number }>(
+    {}
+  );
   const [selectedRideId, setSelectedRideId] = useState<number | null>(null);
   const [pin, setPin] = useState<string>("");
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
@@ -117,13 +131,57 @@ const DriverDashboard: React.FC = () => {
     refetchInterval: 5000,
   });
 
+  useEffect(() => {
+    if (rides && user) {
+      const fetchOffersForRides = async () => {
+        const rideIds = rides
+          .filter((ride) => ride.status.toUpperCase() === "REQUESTED")
+          .map((ride) => ride.id);
+
+        for (const rideId of rideIds) {
+          try {
+            const response = await axios.get(
+              `http://localhost:3001/api/v1/offer/?ride_id=${rideId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+              }
+            );
+            const offers = response.data;
+            const myOffer = offers.find(
+              (offer: Offer) => offer.driver.id === user.id
+            );
+
+            if (myOffer) {
+              setDriverOffers((prevState) => ({
+                ...prevState,
+                [rideId]: myOffer.price,
+              }));
+            }
+          } catch (error) {
+            console.error(`Error fetching offers for ride ${rideId}:`, error);
+          }
+        }
+      };
+
+      fetchOffersForRides();
+    }
+  }, [rides, user]);
+
   // Mutation to create an offer
   const createOfferMutation = useMutation({
     mutationFn: (newOffer: { price: number; ride_id: number }) =>
       axios.post("http://localhost:3001/api/v1/offer", newOffer, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       }),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      const { price, ride_id } = variables;
+      // Update driverOffers state
+      setDriverOffers((prevState) => ({
+        ...prevState,
+        [ride_id]: price,
+      }));
       queryClient.invalidateQueries(["driverRides"]);
       toast({
         title: "Offer sent successfully",
@@ -266,38 +324,63 @@ const DriverDashboard: React.FC = () => {
   const renderRideButton = (ride: Ride) => {
     switch (ride.status.toUpperCase()) {
       case "REQUESTED":
-        return (
-          <HStack mt={2}>
-            <Input
-              placeholder="Price"
-              value={offerPrices[ride.id] || ""}
-              onChange={(e) =>
-                setOfferPrices({
-                  ...offerPrices,
-                  [ride.id]: e.target.value,
-                })
-              }
-              width="100px"
-            />
-            <Button
-              bg={primaryColor}
-              _hover={{ bg: "#15339E" }}
-              color="white"
-              onClick={() => handleSendOffer(ride.id)}
-            >
-              Send Offer
-            </Button>
-          </HStack>
-        );
+        if (driverOffers[ride.id]) {
+          return (
+            <Alert status="info" variant="subtle" borderRadius="md">
+              <AlertIcon />
+              <Box flex="1">
+                <AlertTitle>Offer Sent</AlertTitle>
+                <AlertDescription>
+                  You have sent an offer for ${driverOffers[ride.id].toFixed(2)}
+                  , please wait for the confirmation.
+                </AlertDescription>
+              </Box>
+            </Alert>
+          );
+        } else {
+          return (
+            <HStack mt={2}>
+              <Input
+                placeholder="Price"
+                value={offerPrices[ride.id] || ""}
+                onChange={(e) =>
+                  setOfferPrices({
+                    ...offerPrices,
+                    [ride.id]: e.target.value,
+                  })
+                }
+                width="100px"
+              />
+              <Button
+                bg={primaryColor}
+                _hover={{ bg: "#15339E" }}
+                color="white"
+                onClick={() => handleSendOffer(ride.id)}
+              >
+                Send Offer
+              </Button>
+            </HStack>
+          );
+        }
       case "ACCEPTED":
-        return (
-          <Button
-            colorScheme="green"
-            onClick={() => handlePinValidation(ride.id)}
-          >
-            Validate PIN
-          </Button>
-        );
+        console.log(ride.offer);
+        
+        if (ride.offer && ride.offer.driver_id === user?.id) {
+          return (
+            <Button
+              colorScheme="green"
+              onClick={() => handlePinValidation(ride.id)}
+            >
+              Validate PIN
+            </Button>
+          );
+        } else {
+          return (
+            <Text fontWeight="bold" color="blue.500">
+              Ride accepted by another driver
+            </Text>
+          );
+        }
       case "STARTED":
         return (
           <Text fontWeight="bold" color="blue.500">
@@ -333,7 +416,6 @@ const DriverDashboard: React.FC = () => {
           My Rides
         </Heading>
         <HStack spacing={4}>
-          <Link to="/offers">Offers</Link>
           <Link to="/driver-history">History</Link>
           <Link to="/profile">Profile</Link>
           <Button onClick={handleLogout} variant="outline" colorScheme="red">
@@ -409,16 +491,17 @@ const DriverDashboard: React.FC = () => {
                   <HStack>
                     <Text fontWeight="medium">User: {ride.user.name}</Text>
                   </HStack>
-                  {ride.offer && ride.offer.price && (
-                    <HStack>
-                      <Text fontWeight="bold" color={primaryColor}>
-                        $
-                      </Text>
-                      <Text fontWeight="bold">
-                        {ride.offer.price.toFixed(2)}
-                      </Text>
-                    </HStack>
-                  )}
+                  {ride.status.toUpperCase() === "REQUESTED" &&
+                    driverOffers[ride.id] && (
+                      <HStack>
+                        <Text fontWeight="bold" color={primaryColor}>
+                          $
+                        </Text>
+                        <Text fontWeight="bold">
+                          {driverOffers[ride.id].toFixed(2)}
+                        </Text>
+                      </HStack>
+                    )}
                 </VStack>
 
                 <Box>{renderRideButton(ride)}</Box>

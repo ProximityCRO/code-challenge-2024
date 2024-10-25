@@ -75,7 +75,17 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const scheduledTime = `${date}T${time}:00`;
+
+    // Get the local time zone offset in minutes
+    const offset = -new Date(`${date}T${time}`).getTimezoneOffset();
+    const tzSign = offset >= 0 ? "+" : "-";
+    const tzHours = String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0");
+    const tzMinutes = String(Math.abs(offset) % 60).padStart(2, "0");
+    const tzOffsetStr = `${tzSign}${tzHours}:${tzMinutes}`;
+
+    // Construct scheduledTime with time zone offset
+    const scheduledTime = `${date}T${time}${tzOffsetStr}`;
+
     const newRide: RideRequest = {
       pickup_location: pickup,
       destination_location: destination,
