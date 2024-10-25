@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   VStack,
   Heading,
@@ -15,7 +15,6 @@ import axios from "axios";
 
 import { useAuth } from "../contexts/AuthContext";
 
-// Interface for ride request data
 interface RideRequest {
   pickup_location: string;
   destination_location: string;
@@ -23,21 +22,53 @@ interface RideRequest {
 }
 
 const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  // State variables for form inputs
+  const now = new Date();
+  const initialDate = now.toISOString().split("T")[0];
+  const initialTime = now.toTimeString().slice(0, 5);
+
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [date, setDate] = useState(initialDate);
+  const [time, setTime] = useState(initialTime);
+  const [isFormValid, setIsFormValid] = useState(false);
 
-  // Context and hooks
   const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
-
-  // Constants
   const primaryColor = "#1F41BB";
 
-  // Mutation to create a new ride request
+  // Validate form fields
+  useEffect(() => {
+    const validateForm = () => {
+      const isDateValid = /^\d{4}-\d{2}-\d{2}$/.test(date);
+      const isTimeValid = /^\d{2}:\d{2}$/.test(time);
+      const isPickupValid = pickup.trim().length > 0;
+      const isDestinationValid = destination.trim().length > 0;
+
+      setIsFormValid(
+        isDateValid && isTimeValid && isPickupValid && isDestinationValid
+      );
+    };
+
+    validateForm();
+  }, [date, time, pickup, destination]);
+
+  // Handle date change with format validation
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+      setDate(newDate);
+    }
+  };
+
+  // Handle time change with format validation
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    if (/^\d{2}:\d{2}$/.test(newTime)) {
+      setTime(newTime);
+    }
+  };
+
   const createRideMutation = useMutation({
     mutationFn: async (newRide: RideRequest) => {
       const response = await axios.post(
@@ -50,7 +81,6 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       return response.data;
     },
     onSuccess: () => {
-      // Invalidate userRides query to refetch data
       queryClient.invalidateQueries(["userRides"]);
       toast({
         title: "Ride requested successfully",
@@ -63,7 +93,7 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     onError: (error) => {
       toast({
         title: "Error creating ride request",
-        description: "Please try again later",
+        description: "Please verify all fields are correctly filled",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -72,26 +102,53 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     },
   });
 
-  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Get the local time zone offset in minutes
-    const offset = -new Date(`${date}T${time}`).getTimezoneOffset();
-    const tzSign = offset >= 0 ? "+" : "-";
-    const tzHours = String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0");
-    const tzMinutes = String(Math.abs(offset) % 60).padStart(2, "0");
-    const tzOffsetStr = `${tzSign}${tzHours}:${tzMinutes}`;
+    if (!isFormValid) {
+      toast({
+        title: "Invalid form",
+        description: "Please check all fields are filled correctly",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
 
-    // Construct scheduledTime with time zone offset
-    const scheduledTime = `${date}T${time}${tzOffsetStr}`;
+    try {
+      // Validate date and time combination
+      const scheduledDateTime = new Date(`${date}T${time}`);
+      if (isNaN(scheduledDateTime.getTime())) {
+        throw new Error("Invalid date or time");
+      }
 
-    const newRide: RideRequest = {
-      pickup_location: pickup,
-      destination_location: destination,
-      scheduled_time: scheduledTime,
-    };
-    createRideMutation.mutate(newRide);
+      const offset = -scheduledDateTime.getTimezoneOffset();
+      const tzSign = offset >= 0 ? "+" : "-";
+      const tzHours = String(Math.floor(Math.abs(offset) / 60)).padStart(
+        2,
+        "0"
+      );
+      const tzMinutes = String(Math.abs(offset) % 60).padStart(2, "0");
+      const tzOffsetStr = `${tzSign}${tzHours}:${tzMinutes}`;
+
+      const scheduledTime = `${date}T${time}${tzOffsetStr}`;
+
+      const newRide: RideRequest = {
+        pickup_location: pickup,
+        destination_location: destination,
+        scheduled_time: scheduledTime,
+      };
+      createRideMutation.mutate(newRide);
+    } catch (error) {
+      toast({
+        title: "Invalid date/time",
+        description: "Please check the date and time values",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
@@ -122,16 +179,13 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <Input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={handleDateChange}
+              min={initialDate}
             />
           </FormControl>
           <FormControl isRequired>
             <FormLabel>Time</FormLabel>
-            <Input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-            />
+            <Input type="time" value={time} onChange={handleTimeChange} />
           </FormControl>
         </VStack>
       </ModalBody>
@@ -142,6 +196,7 @@ const NewRideRequest: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           _hover={{ bg: "#15339E" }}
           color="white"
           isLoading={createRideMutation.isLoading}
+          isDisabled={!isFormValid}
           mr={3}
         >
           Send Request
